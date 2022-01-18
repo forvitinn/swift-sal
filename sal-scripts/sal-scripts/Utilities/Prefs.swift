@@ -70,6 +70,28 @@ func su_pref(_ prefName: String) -> Any? {
                                   kCFPreferencesCurrentHost)
 }
 
+func serialize(_ plist: Any) throws -> Data {
+    do {
+        let plistData = try PropertyListSerialization.data(
+            fromPropertyList: plist,
+            format: PropertyListSerialization.PropertyListFormat.xml,
+            options: 0)
+        return plistData
+    } catch {
+        throw FoundationPlistError.writeError(description: "\(error)")
+    }
+}
+
+func writePlist(_ dataObject: Any, toFile filepath: String) throws {
+    do {
+        let data = try serialize(dataObject) as NSData
+        if !(data.write(toFile: filepath, atomically: true)) {
+            throw FoundationPlistError.writeError(description: "write failed")
+        }
+    } catch {
+        throw FoundationPlistError.writeError(description: "\(error)")
+    }
+}
 // MARK: end of munki help
 func getPref(plistPath: String, plistKey: String) -> String {
     if fileManager.fileExists(atPath: plistPath) {

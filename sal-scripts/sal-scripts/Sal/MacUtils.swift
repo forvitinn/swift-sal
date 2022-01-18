@@ -8,10 +8,9 @@
 import Foundation
 
 let salPrefDomain = "com.github.salopensource.sal"
-extension String: RunTimeError {}
 
 func setupSalClient() {
-    var client = SalClient.init()
+    let client = SalClient.init()
     
     let caCert = salPref("CACert")
     let clientCert = salPref("SSLClientCertificate")
@@ -186,7 +185,7 @@ func runScripts(directory: String, scriptArgs: [String], error: Bool = false) ->
             continue
         }
 
-        var (err, out) = exec(command: script as! String, arguments: scriptArgs)
+        let (err, _) = exec(command: script as! String, arguments: scriptArgs)
         
         if err != "" {
             let errorMessage = "error running \(script): \(err)"
@@ -196,6 +195,8 @@ func runScripts(directory: String, scriptArgs: [String], error: Bool = false) ->
                 Log.error(errorMessage)
             }
         }
+        
+        results.append("\(script) ran successfully")
     }
     
     return results

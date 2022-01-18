@@ -16,9 +16,10 @@
 		9DCAD96E27923BC500417947 /* Machine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DCAD96D27923BC500417947 /* Machine.swift */; };
 		9DCAD97027923BDE00417947 /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DCAD96F27923BDE00417947 /* Utils.swift */; };
 		9DCAD97227923BFF00417947 /* Prefs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DCAD97127923BFF00417947 /* Prefs.swift */; };
-		9DCAD974279300CF00417947 /* salCheckin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DCAD973279300CF00417947 /* salCheckin.swift */; };
-		9DCAD9772793022300417947 /* macUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DCAD9762793022300417947 /* macUtils.swift */; };
+		9DCAD974279300CF00417947 /* Checkin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DCAD973279300CF00417947 /* Checkin.swift */; };
+		9DCAD9772793022300417947 /* MacUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DCAD9762793022300417947 /* MacUtils.swift */; };
 		9DCAD9792793980000417947 /* Client.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DCAD9782793980000417947 /* Client.swift */; };
+		9DCAD97B279659B000417947 /* Submit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DCAD97A279659B000417947 /* Submit.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -44,9 +45,10 @@
 		9DCAD96D27923BC500417947 /* Machine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Machine.swift; sourceTree = "<group>"; };
 		9DCAD96F27923BDE00417947 /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
 		9DCAD97127923BFF00417947 /* Prefs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Prefs.swift; sourceTree = "<group>"; };
-		9DCAD973279300CF00417947 /* salCheckin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = salCheckin.swift; sourceTree = "<group>"; };
-		9DCAD9762793022300417947 /* macUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macUtils.swift; sourceTree = "<group>"; };
+		9DCAD973279300CF00417947 /* Checkin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Checkin.swift; sourceTree = "<group>"; };
+		9DCAD9762793022300417947 /* MacUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacUtils.swift; sourceTree = "<group>"; };
 		9DCAD9782793980000417947 /* Client.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Client.swift; sourceTree = "<group>"; };
+		9DCAD97A279659B000417947 /* Submit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Submit.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -103,7 +105,6 @@
 			children = (
 				9DCAD96B27923B6900417947 /* Logger.swift */,
 				9DCAD96D27923BC500417947 /* Machine.swift */,
-				9DCAD96F27923BDE00417947 /* Utils.swift */,
 				9DCAD97127923BFF00417947 /* Prefs.swift */,
 			);
 			path = Utilities;
@@ -112,9 +113,11 @@
 		9DCAD9752793021200417947 /* Sal */ = {
 			isa = PBXGroup;
 			children = (
-				9DCAD973279300CF00417947 /* salCheckin.swift */,
-				9DCAD9762793022300417947 /* macUtils.swift */,
+				9DCAD973279300CF00417947 /* Checkin.swift */,
+				9DCAD9762793022300417947 /* MacUtils.swift */,
 				9DCAD9782793980000417947 /* Client.swift */,
+				9DCAD96F27923BDE00417947 /* Utils.swift */,
+				9DCAD97A279659B000417947 /* Submit.swift */,
 			);
 			path = Sal;
 			sourceTree = "<group>";
@@ -180,14 +183,15 @@
 				9DCAD97227923BFF00417947 /* Prefs.swift in Sources */,
 				9DCAD96627923B1500417947 /* Profiles.swift in Sources */,
 				9DCAD9792793980000417947 /* Client.swift in Sources */,
-				9DCAD974279300CF00417947 /* salCheckin.swift in Sources */,
+				9DCAD974279300CF00417947 /* Checkin.swift in Sources */,
 				9DCAD96C27923B6900417947 /* Logger.swift in Sources */,
 				9DCAD96E27923BC500417947 /* Machine.swift in Sources */,
 				9DCAD96827923B2100417947 /* MachineInfo.swift in Sources */,
+				9DCAD97B279659B000417947 /* Submit.swift in Sources */,
 				9DCAD96427923B0C00417947 /* Munki.swift in Sources */,
 				9DCAD95B27923AE200417947 /* main.swift in Sources */,
 				9DCAD96A27923B3200417947 /* AppleUpdates.swift in Sources */,
-				9DCAD9772793022300417947 /* macUtils.swift in Sources */,
+				9DCAD9772793022300417947 /* MacUtils.swift in Sources */,
 				9DCAD97027923BDE00417947 /* Utils.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
