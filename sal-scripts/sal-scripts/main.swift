@@ -11,3 +11,5 @@ let version = "0.0.1"
 
 initLogger()
 
+let checkinModules = gatherInfo()
+print(dictToJson(dictItem: checkinModules))
