@@ -5,11 +5,11 @@
 //  Created by John Peterson on 1/14/22.
 //
 
-import Foundation
-import CryptoKit
-import CommonCrypto
-import SystemConfiguration
 import CloudKit
+import CommonCrypto
+import CryptoKit
+import Foundation
+import SystemConfiguration
 
 let ResultsPath = "/usr/local/sal/checkin_results.json"
 
@@ -117,25 +117,24 @@ func getHash(inputFile: String) -> String {
             Log.error("Could not get hash of: \(inputFile)")
             return sha256
         }
-        
+
         var hasher = SHA256()
         while autoreleasepool(invoking: {
             let nextChunk = handle.readData(ofLength: SHA256.blockByteCount)
             guard !nextChunk.isEmpty else { return false }
             hasher.update(data: nextChunk)
             return true
-        }) { }
+        }) {}
         let digest = hasher.finalize()
         sha256 = digest.map { String(format: "%02hhx", $0) }.joined()
     }
     return sha256
 }
 
-
 func addPluginResults(plugin: String, data: String, historical: Bool = false) {
     /*
      Add data to the shared plugin results plist.
-
+     
      This function creates the shared results plist file if it does not
      already exist; otherwise, it adds the entry by appending.
      Args:
@@ -145,22 +144,22 @@ func addPluginResults(plugin: String, data: String, historical: Bool = false) {
                             all results (True). Optional, defaults to False.
      */
     #if !os(macOS)
-    Log.error("Please PR a plugin results path for your platform!")
-    return
+        Log.error("Please PR a plugin results path for your platform!")
+        return
     #endif
-    
+
     let plistPath = "/usr/local/sal/plugin_results.plist"
-    var pluginResults = [[String:Any]?]()
+    var pluginResults = [[String: Any]?]()
     if fileManager.fileExists(atPath: plistPath) {
         do {
-            pluginResults = try readPlist(plistPath) as! [[String : Any]]
+            pluginResults = try readPlist(plistPath) as! [[String: Any]]
         } catch {
             Log.error("Could not convert \(plistPath) to Dictionary")
             pluginResults = []
         }
     }
     pluginResults.append(["plugin": plugin, "historical": historical, "data": data])
-    
+
     do {
         try writePlist(pluginResults, toFile: plistPath)
     } catch {
@@ -169,10 +168,10 @@ func addPluginResults(plugin: String, data: String, historical: Bool = false) {
 }
 
 func getCheckinResults() -> [String: Any] {
-    var results = [String:Any]()
+    var results = [String: Any]()
     if fileManager.fileExists(atPath: ResultsPath) {
         do {
-            results = try readPlist(ResultsPath) as! [String : Any]
+            results = try readPlist(ResultsPath) as! [String: Any]
         } catch {
             Log.error("Could not read contents of: \(ResultsPath)")
         }
@@ -198,21 +197,18 @@ func saveResults(data: [String: Any]) {
     }
 }
 
-func setCheckinResults(moduleName: String, data: [String:Any]) {
+func setCheckinResults(moduleName: String, data: [String: Any]) {
     var results = getCheckinResults()
     results[moduleName] = data
-    
+
     saveResults(data: results)
 }
 
 func submissionEncode(input: String) -> String {
     /*
-     meed to check on compression server side.
-     this currently only base64 encodes the item but im not sure
-     if the server is expecting _only_ a bx2 compressed objcct.
-    */
-     return Data(input.utf8).base64EncodedString()
+      meed to check on compression server side.
+      this currently only base64 encodes the item but im not sure
+      if the server is expecting _only_ a bx2 compressed objcct.
+     */
+    return Data(input.utf8).base64EncodedString()
 }
-     
-
-
