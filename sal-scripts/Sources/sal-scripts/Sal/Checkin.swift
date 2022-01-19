@@ -5,7 +5,6 @@
 //  Created by John Peterson on 1/15/22.
 //
 
-import Darwin
 import Foundation
   
 func gatherInfo() -> [String:Any] {

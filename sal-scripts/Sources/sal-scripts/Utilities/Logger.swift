@@ -72,10 +72,8 @@ class Logger {
     }
 }
 
-func initLogger() {
-    let logLevel = pref("LogLevel", salPrefDomain) ?? "INFO"
-    
-    switch (logLevel as! String) {
+func initLogger(logLevel: String) {
+    switch logLevel {
     case "INFO":
         Logger.sharedInstance.verbosityLevel = .Info
     case "DEBUG":

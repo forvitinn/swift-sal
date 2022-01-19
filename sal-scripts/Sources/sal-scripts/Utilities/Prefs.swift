@@ -38,7 +38,7 @@ func pref(_ prefName: String, _ prefDomain: String) -> Any? {
      - ~/Library/Preferences/ManagedInstalls.plist
      - /Library/Preferences/ManagedInstalls.plist
      - defaultPrefs defined here. */
-    var value: Any?
+    var value: Any? = "None"
     value = CFPreferencesCopyAppValue(prefName as CFString, prefDomain as CFString)
     if value == nil {
         Log.debug("cannot read preference key for: \(prefName)")

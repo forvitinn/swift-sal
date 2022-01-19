@@ -71,6 +71,42 @@ func salPref(_ prefName: String) -> Any {
         "SendOfflineReport": false,
     ] as [String : Any]
     
+    
+    var prefVal = pref(prefName, salPrefDomain) ?? "None"
+    // bool and nsarray conversion didnt work well in the switch. handle it here.
+    if let stringBool = prefVal as? Bool {
+        prefVal = String(stringBool)
+    }
+    
+    if let stringArray = prefVal as? NSArray {
+        prefVal = stringArray.description.filter { !$0.isWhitespace }
+    }
+    
+    if (prefVal as! String) == "None" {
+        if let prefExists = defaultPrefs[prefVal as! String] {
+            // If we got here, the pref value was either set to None or never
+            // set, AND the default was also None. Fall back to auto prefs.
+            prefVal = unobjctify(prefExists)!
+            /*
+            Sets a Sal preference.
+            The preference file on disk is located at
+            /Library/Preferences/com.github.salopensource.sal.plist.  This should
+            normally be used only for 'bookkeeping' values; values that control
+            the behavior of munki may be overridden elsewhere (by MCX, for
+            example)
+            */
+            setPref(prefName, prefVal as Any)
+        }
+    }
+    
+    return unobjctify(prefVal)!
+}
+
+func forced(pref: String, _ bundleID: String = salPrefDomain) -> Bool {
+    return CFPreferencesAppValueIsForced(pref as CFString, bundleID as CFString)
+}
+
+func prefsReport() -> [String:Any] {
     let prefs = [
         "ServerURL",
         "key",
@@ -83,45 +119,25 @@ func salPref(_ prefName: String) -> Any {
         "SSLClientKey",
         "MessageBlacklistPatterns",
     ]
-    var prefVal: Any = ""
-    
-    for prefName in prefs {
-        prefVal = pref(prefName, salPrefDomain) ?? "None"
-        if (prefVal as! String) == "None" {
-            if let _ = defaultPrefs[prefName] {
-                // If we got here, the pref value was either set to None or never
-                // set, AND the default was also None. Fall back to auto prefs.
-                prefVal = defaultPrefs[prefName] as Any
-                /*
-                Sets a Sal preference.
-                The preference file on disk is located at
-                /Library/Preferences/com.github.salopensource.sal.plist.  This should
-                normally be used only for 'bookkeeping' values; values that control
-                the behavior of munki may be overridden elsewhere (by MCX, for
-                example)
-                */
-                setPref(prefName, prefVal as Any)
-            }
-        }
+    var report = [String:Any]()
+    for item in prefs {
+        let value = salPref(item)
+        let force = forced(pref: item)
+        report[item] = ["value": value, "forced": force]
     }
-    return prefVal
+    return report
 }
 
-func unobjctify(_ item: Any?) -> Any? {
+func unobjctify(_ item: Any) -> Any? {
     /*
      this serves a far small smaller purpose than the unobjctify function
      in the python client. the main type that trips this up is the NSTaggedDate / NSDate
      types. those are largely handled in serializing the data when it is gathered.
      leaving this as a fail safe to catch custome data?
      */
-   
     switch item {
-    case is Bool:
-        // pythonify the bool?
-        Log.debug("\(String(describing: item)) is a Double")
-        return item
     case is String:
-        Log.debug("\(String(describing: item)) is an String")
+        Log.debug("\(String(describing: item)) is a String")
         return item
     case is Int:
         Log.debug("\(String(describing: item)) is an Int")
@@ -167,7 +183,7 @@ func scriptIsRunning(scriptName: String) -> Bool {
     return false
 }
 
-func runScripts(directory: String, scriptArgs: [String], error: Bool = false) -> [String] {
+func runScripts(directory: String,scriptArgs: [String], _ error: Bool = false) -> [String] {
     var results = [String]()
     var scripts = [Any]()
     let skipNames = ["__pycache__"]

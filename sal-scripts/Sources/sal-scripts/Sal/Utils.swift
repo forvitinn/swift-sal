@@ -170,10 +170,16 @@ func addPluginResults(plugin: String, data: String, historical: Bool = false) {
 func getCheckinResults() -> [String: Any] {
     var results = [String: Any]()
     if fileManager.fileExists(atPath: ResultsPath) {
+        let url = URL(fileURLWithPath: ResultsPath)
         do {
-            results = try readPlist(ResultsPath) as! [String: Any]
+            let data = try Data(contentsOf: url)
+            let JSON = try JSONSerialization.jsonObject(with: data, options: [])
+            if let json = JSON as? [String: Any] {
+                results = json
+                return results
+            }
         } catch {
-            Log.error("Could not read contents of: \(ResultsPath)")
+            Log.debug("Could not read contents of \(ResultsPath)")
         }
     }
     return results
