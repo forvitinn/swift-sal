@@ -11,7 +11,7 @@ else
   echo "Could not find required Xcode build. Exiting..."
   exit 1
 fi
-$XCODE_BUILD -project sal-script/sal-scripts.xcodeproj 
+$XCODE_BUILD -project sal-scripts/sal-scripts.xcodeproj 
 XCB_RESULT="$?"
 if [ "${XCB_RESULT}" != "0" ]; then
     echo "Error running xcodebuild: ${XCB_RESULT}" 1>&2
