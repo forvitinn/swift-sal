@@ -26,7 +26,7 @@ extension Dictionary {
     }
 }
 
-func dictToJson(dictItem: [String: Any]) -> Any {
+func dictToJson(dictItem: [String: Any]) -> String {
     let jsonData = try! JSONSerialization.data(withJSONObject: dictItem, options: [])
     let jsonString = String(data: jsonData, encoding: String.Encoding.utf8)!
 
@@ -43,7 +43,7 @@ func discardTimeZoneFromDate(_ theDate: Date) -> Date {
     return theDate.addingTimeInterval(TimeInterval(-timeZoneOffset))
 }
 
-func exec(command: String, arguments: [String] = []) -> (err: String, output: String) {
+func exec(command: String, arguments: [String] = [], wait: Bool? = false) -> (err: String, output: String) {
     let task = Process()
 
     task.executableURL = URL(fileURLWithPath: command)
@@ -64,8 +64,10 @@ func exec(command: String, arguments: [String] = []) -> (err: String, output: St
         Log.debug("Error running task. command: \(command). args: \(arguments)")
         return ("\(error)", "")
     }
-
-    task.waitUntilExit()
+    
+    if wait! {
+        task.waitUntilExit()
+    }
 
     let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
     let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
@@ -199,11 +201,12 @@ func saveResults(data: [String: Any]) {
         try writePlist(data, toFile: ResultsPath)
         Log.debug("successfully updated \(ResultsPath)")
     } catch {
-        Log.error("could not update \(ResultsPath)")
+        Log.error("could not update \(ResultsPath): \(error)")
     }
+    writeJson(dataObject: data, filepath: ResultsPath)
 }
 
-func setCheckinResults(moduleName: String, data: [String: Any]) {
+func setCheckinResults(moduleName: String, data: Any) {
     var results = getCheckinResults()
     results[moduleName] = data
 

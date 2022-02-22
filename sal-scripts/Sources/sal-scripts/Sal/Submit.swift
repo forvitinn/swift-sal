@@ -4,7 +4,6 @@
 //
 //  Created by John Peterson on 1/17/22.
 //
-
 import Foundation
 import ArgumentParser
 
@@ -48,9 +47,9 @@ let CHECKIN_MODULES_DIR = "/usr/local/sal/checkin_modules"
 
 func salSubmit() {
     getArgs()
+    initLogger(logLevel: "INFO")
     if args.debug || args.verbose {
         initLogger(logLevel: "DEBUG")
-        
         
         var prefs = prefsReport()
         
@@ -62,25 +61,26 @@ func salSubmit() {
             prefs["key"] = ["value": args.key, "forced": "commandline"]
         }
         
+        var prefType = ""
         Log.debug("Sal client prefs:")
         for (key, value) in prefs {
             let val = (value as! [String:Any])
-            let forced = (val["forced"]! as! Bool)
-            var prefType = ""
-            
-            if !forced {
-                prefType = "profile"
-            } else {
+            if let forced = (val["forced"] as? Bool) {
+                if forced {
+                    prefType = "profile"
+                } else {
+                    prefType = "prefs"
+                }
+            } else if (val["forced"] as? String) == "commandline" {
                 prefType = "prefs"
             }
-
             Log.debug("\t\(key): \(String(describing: val["value"]!)) \(prefType) ")
         }
     }
     let user = ProcessInfo().environment["USER"]
     if user! != "root" {
-        Log.debug("Manually running this script requires sudo.")
-        exit(3)
+        Log.info("Manually running this script requires sudo.")
+//        exit(3)
     }
     if waitForScript(scriptName: "sal-submit") {
         Log.debug("Another instance of sal-submit is already running. Exiting.")
@@ -91,16 +91,40 @@ func salSubmit() {
         exit(3)
     }
     Log.info("Processing checkin modules...")
+
+    let scriptResults = gatherInfo()
+    saveResults(data: scriptResults)
     
-    let scriptResults = runScripts(directory:CHECKIN_MODULES_DIR, scriptArgs: [])
-    for message in scriptResults {
+    for message in scriptResults.keys {
         Log.debug(message)
     }
-    
+    var report = getCheckinResults()
+
     let submission = getCheckinResults()
     let runType = getRunType(submission: submission)
+
+    runPlugins(runType: runType)
     
+    let client = setupSalClient()
+
+    if args.url != "" {
+        client.baseUrl(url: args.url)
+        Log.debug("Server URL overridden with \(args.url)")
+    }
     
+    if args.key != "" {
+        client.auth(creds: ["sal", args.key])
+        // override the key in the report since its used
+        // for querying.
+        if let _ = report["Sal"] as? [String:[String:Any]] {
+            var update = report["Sal"] as? [String:[String:Any]]
+            update!["extra_data"]!.updateValue(args.key, forKey: "key")
+            report.updateValue(update as Any, forKey: "Sal")
+        }
+        Log.debug("Machine group key overridden with \(args.key)")
+    }
+
+    sendCheckin(report: report, client: client)
     
 }
 
@@ -128,12 +152,21 @@ func getRunType(submission: [String:Any]) -> String {
 func runPlugins(runType: String) {
     Log.info("Processing plugins...")
     let pluginResultsPath = "/usr/local/sal/plugin_results.plist"
+    
+    runExternalScripts(runType: runType)
+    let pluginResults = getPluginResults(pluginResultsPlist: pluginResultsPath)
+    do {
+        try FileManager.default.removeItem(atPath: pluginResultsPath)
+    } catch {
+        Log.debug("Error removing temporary profile directory")
+    }
+    
+    setCheckinResults(moduleName: "plugin_results", data: pluginResults)
 }
 
 func runExternalScripts(runType: String) {
-    initLogger(logLevel: "DEBUG")
-//    let externalScriptsDir = "/usr/local/sal/external_scripts"
-    let externalScriptsDir = "/Users/john.peterson/Desktop/test"
+    let externalScriptsDir = "/usr/local/sal/external_scripts"
+
     var isDir : ObjCBool = false
     if fileManager.fileExists(atPath: externalScriptsDir, isDirectory: &isDir) {
         if isDir.boolValue {
@@ -155,7 +188,7 @@ func runExternalScripts(runType: String) {
                         } else {
                             let (err, _) = exec(command: script.path, arguments: [runType])
                             if err != "" {
-                                Log.warning("\(script.path) had errors during execution")
+                                Log.warning("\(script.path) had errors during execution: \(err)")
                                 continue
                             }
                             Log.debug("\(script) ran successfully")
@@ -171,36 +204,46 @@ func runExternalScripts(runType: String) {
     }
 }
 
-func getPluginResults(pluginResultsPlist: String) -> [String:Any] {
-    var plistData = [String:Any]()
+func getPluginResults(pluginResultsPlist: String) -> Any {
     if fileManager.fileExists(atPath: pluginResultsPlist) {
         do {
-            plistData = try readPlist(pluginResultsPlist) as! [String:Any]
+            let plistData = try readPlist(pluginResultsPlist)
+            if let result = plistData as? [String:Any] {
+                return result
+            } else if let result = plistData as? [[String:Any]] {
+                var res = [String:Any]()
+                for item in result {
+                    for (key, value) in item {
+                        res.updateValue(value, forKey: key)
+                    }
+                }
+                return res
+            } else {
+                Log.debug("unknown plistData format")
+            }
+            
         } catch {
             Log.warning("Could not read external data plist.")
         }
     } else {
         Log.warning("No external data plist found.")
     }
-    return plistData
+    return [String:Any]()
 }
 
 // https://www.hackingwithswift.com/articles/108/how-to-use-regular-expressions-in-swift
 func removeBlocklistedMessages() {
     var update = false
-    let patterns = salPref("MessageBlacklistPatterns") ?? "None"
-    if (patterns as! String) == "None" {
-        update = false
-        var submission = getCheckinResults()
-        
+    let patterns = salPref("MessageBlacklistPatterns")
 
+    if (patterns as! String) == "None" {
+        let submission = getCheckinResults()
+        
         for results in submission.values {
             if let res = results as? [String:Any] {
-                
                 var removals = [[String:Any]]()
-                print(res.keys)
+
                 if let message = res["messages"] as? [String:Any] {
-                    print(res["messages"]!)
 
                     if let subject = message["text"] {
                         do {
@@ -217,9 +260,11 @@ func removeBlocklistedMessages() {
                 if removals.count > 0 {
                     update = true
                     for removal in removals {
-                        Log.debug("Removing message \(removal)")
-                        var r = results as! [String:Any]
-                        r.removeValue(forKey: String(removal as! String))
+                        for (key, _) in removal {
+                            Log.debug("Removing message \(removal)")
+                            var r = results as! [String:Any]
+                            r.removeValue(forKey: key)
+                        }
                     }
                 }
 
@@ -228,4 +273,46 @@ func removeBlocklistedMessages() {
             }
         }
     }
+}
+
+func removeSkippedFacts() {
+    var update = false
+    var submission = getCheckinResults()
+    
+    let skipFacts = salPref("SkipFacts") as! [String]
+    if !(skipFacts).isEmpty {
+        for (key, results) in submission {
+            if let _ = results as? [String:Any] {
+                var res = results as? [String:Any]
+                var removals = [String]()
+                
+                if let facts = (res!["facts"] as? [String:Any]) {
+                    for fact in facts.keys {
+                        if skipFacts.contains(fact) {
+                            removals.append(fact)
+                        }
+                    }
+                }
+                
+                if !removals.isEmpty {
+                    update = true
+                    for removal in removals {
+                        Log.debug("Removing message \(removal)")
+                        res!.removeValue(forKey: removal)
+                        submission.updateValue(res as Any, forKey: key)
+                    }
+                }
+            }
+        }
+    }
+    if update {
+        saveResults(data: submission)
+    }
+}
+
+func sendCheckin(report: [String:Any], client: SalClient) {
+    Log.debug("Sending report")
+    
+    let post = client.post(requestUrl: "checkin/", jsonData: report)
+    client.submitRequest(method: "POST", request: post)
 }

@@ -14,9 +14,10 @@ func gatherInfo() -> [String:Any] {
     let munki = MunkiReport()
     let profiles = ProfileReport()
     let sus = SoftwareUpdateReport()
+    let sal = SalReport()
     
     // probably a better way to do this.
-    for item in [munki, profiles, sus, machine] {
+    for item in [munki, profiles, sus, machine, sal] {
         salSubmission.merge(dict: item)
     }
     

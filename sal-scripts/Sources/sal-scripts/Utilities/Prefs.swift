@@ -92,6 +92,17 @@ func writePlist(_ dataObject: Any, toFile filepath: String) throws {
         throw FoundationPlistError.writeError(description: "\(error)")
     }
 }
+
+func writeJson(dataObject: [String:Any], filepath: String) {
+    let data = dictToJson(dictItem: dataObject)
+    let url = URL(fileURLWithPath: filepath)
+    do {
+        try data.write(to: url, atomically: true, encoding: .utf8)
+    } catch {
+        Log.debug("could not write to \(filepath): \(error)")
+    }
+}
+
 // MARK: end of munki help
 func getPref(plistPath: String, plistKey: String) -> String {
     if fileManager.fileExists(atPath: plistPath) {

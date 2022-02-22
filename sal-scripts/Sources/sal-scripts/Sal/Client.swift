@@ -13,18 +13,25 @@ class SalClient {
     var _auth: (Any)? = nil
     var _cert: (Any)? = nil
     var _verify: (Any)? = nil
+    var sesh = URLSessionConfiguration.default
     let basic_timeout = [3.05, 4]
     let post_timeout = [3.05, 8]
+    
         
     func createSession() {
         if (self._auth != nil) {
-            print(0)
+            let authData = ((self._auth as! Array)[0] + ":" + (self._auth as! Array)[1]).data(using: .utf8)!.base64EncodedString()
+            self.sesh.httpAdditionalHeaders = [
+                "Content-Type": "application/json; charset=utf-8",
+                "Accept": "application/json; charset=utf-8",
+                "Authorization": "Basic \(authData)"
+            ]
         }
         if (self._cert != nil) {
-            print(1)
+            Log.debug("build me")
         }
         if (self._verify != nil) {
-            print(2)
+            Log.debug("build me")
         }
     }
     
@@ -67,18 +74,26 @@ class SalClient {
         return self._base_url + "/" + endPoint + "/"
     }
     
-    func get(requestUrl: String) {
+    func get(requestUrl: String) -> URLRequest {
         let url = URL(string: buildUrl(url: requestUrl))
         var request = URLRequest(url: url!)
         request.httpMethod = "GET"
 
+        return request
     }
     
-    func post(requestUrl: String) {
+    func post(requestUrl: String, jsonData: [String:Any]) -> URLRequest {
         let url = URL(string: buildUrl(url: requestUrl))
         var request = URLRequest(url: url!)
         request.httpMethod = "POST"
+        let json = try? JSONSerialization.data(withJSONObject: jsonData.compactMapValues { $0 })
 
+        request.httpBody = json
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+
+
+        return request
     }
         
     func httpRequest(request: URLRequest, session: URLSessionConfiguration, completion: @escaping () -> Void) {
@@ -93,29 +108,31 @@ class SalClient {
                 error == nil,
                 let data = data,
                 let response = String(data: data, encoding: .utf8)
+                    
             else {
                 Log.error("error submitting results: \(String(describing: error))")
                 return
             }
             Log.info("submission response: \(response)")
+            print(response.statusCode)
+            
         }
         task.resume()
     }
     
     func submitRequest(method: String, request: URLRequest) {
-        let sessionConfig = URLSessionConfiguration.default
         if method == "GET" {
-            sessionConfig.timeoutIntervalForRequest = basic_timeout[0]
-            sessionConfig.timeoutIntervalForResource = basic_timeout[1]
+            self.sesh.timeoutIntervalForRequest = basic_timeout[0]
+            self.sesh.timeoutIntervalForResource = basic_timeout[1]
         }
         if method == "POST" {
-            sessionConfig.timeoutIntervalForRequest = post_timeout[0]
-            sessionConfig.timeoutIntervalForResource = post_timeout[1]
+            self.sesh.timeoutIntervalForRequest = post_timeout[0]
+            self.sesh.timeoutIntervalForResource = post_timeout[1]
         }
-        
+
         var finished = false
 
-        httpRequest(request: request, session: sessionConfig) {
+        httpRequest(request: request, session: self.sesh) {
             finished = true
         }
 

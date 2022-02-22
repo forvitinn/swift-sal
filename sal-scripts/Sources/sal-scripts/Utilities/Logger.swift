@@ -17,20 +17,29 @@ import os
 */
 
 struct Log {
-    static func info(_ msg: String) {
-        Logger.sharedInstance.logMessage(message: msg, .Info)
-    }
-
-    static func debug(_ msg: String) {
-        Logger.sharedInstance.logMessage(message: msg, .Debug)
-    }
-
-    static func error(_ msg: String) {
-        Logger.sharedInstance.logMessage(message: msg, .Error)
+    let file, function: String
+    let line: Int
+    
+    init(file: String = #file, line: Int = #line, function: String = #function) {
+        self.file = file
+        self.line = line
+        self.function = function
     }
     
-    static func warning(_ msg: String) {
-        Logger.sharedInstance.logMessage(message: msg, .Warning)
+    static func info(_ msg: String, file: String = #file, line: Int = #line, function: String = #function) {
+        Logger.sharedInstance.logMessage(message: msg, logLevel: .Info, file: file, line: line, function: function)
+    }
+
+    static func debug(_ msg: String, file: String = #file, line: Int = #line, function: String = #function) {
+        Logger.sharedInstance.logMessage(message: msg, logLevel: .Debug, file: file, line: line, function: function)
+    }
+
+    static func error(_ msg: String, file: String = #file, line: Int = #line, function: String = #function) {
+        Logger.sharedInstance.logMessage(message: msg, logLevel: .Error, file: file, line: line, function: function)
+    }
+    
+    static func warning(_ msg: String, file: String = #file, line: Int = #line, function: String = #function) {
+        Logger.sharedInstance.logMessage(message: msg, logLevel: .Warning, file: file, line: line, function: function)
     }
 }
 
@@ -45,6 +54,7 @@ enum LogLevel: Int {
 
 class Logger {
     var verbosityLevel: LogLevel = .Custom
+//    var file: String = ""
 
     func loggerDate() -> String {
         let date = Date()
@@ -54,11 +64,11 @@ class Logger {
         return dateFormatter.string(from: date)
     }
     
-    func logMessage(message: String , _ logLevel: LogLevel = .Info, file: String = #file, line: Int = #line, funcName: String = #function) {
+    func logMessage(message: String , logLevel: LogLevel = .Info, file: String, line: Int, function: String) {
 
         if self.verbosityLevel.rawValue > LogLevel.None.rawValue && logLevel.rawValue <= self.verbosityLevel.rawValue {
             let fname = (file as NSString).lastPathComponent
-            print("[\(self.loggerDate()) \(fname):\(funcName):\(line)] \(message)")
+            print("[\(self.loggerDate()) \(fname):\(function):\(line)] \(message)")
         }
     }
 
@@ -76,12 +86,13 @@ func initLogger(logLevel: String) {
     switch logLevel {
     case "INFO":
         Logger.sharedInstance.verbosityLevel = .Info
+        Logger.sharedInstance.logMessage(message: "Log level set to \(logLevel)", logLevel: .Info, file: #file, line: #line, function: #function)
     case "DEBUG":
         Logger.sharedInstance.verbosityLevel = .Debug
+        Logger.sharedInstance.logMessage(message: "Log level set to \(logLevel)", logLevel: .Debug, file: #file, line: #line, function: #function)
     default:
         Logger.sharedInstance.verbosityLevel = .Info
+        Logger.sharedInstance.logMessage(message: "Log level set to INFO", logLevel: .Info, file: #file, line: #line, function: #function)
     }
-   
-    Logger.sharedInstance.logMessage(message: "Log level set to \(logLevel)", .Debug)
 }
 

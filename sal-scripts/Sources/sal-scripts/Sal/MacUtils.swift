@@ -9,7 +9,7 @@ import Foundation
 
 let salPrefDomain = "com.github.salopensource.sal"
 
-func setupSalClient() {
+func setupSalClient() -> SalClient {
     let client = SalClient.init()
     
     let caCert = salPref("CACert")
@@ -56,6 +56,8 @@ func setupSalClient() {
     }
     
     client.baseUrl(url: (salPref("ServerURL") as! String))
+    
+    return client
 }
 
 func salPref(_ prefName: String) -> Any {
@@ -75,11 +77,12 @@ func salPref(_ prefName: String) -> Any {
     var prefVal = pref(prefName, salPrefDomain) ?? "None"
     // bool and nsarray conversion didnt work well in the switch. handle it here.
     if let stringBool = prefVal as? Bool {
+        // handle bool conversion here
         prefVal = String(stringBool)
     }
     
     if let stringArray = prefVal as? NSArray {
-        prefVal = stringArray.description.filter { !$0.isWhitespace }
+        return stringArray
     }
     
     if (prefVal as! String) == "None" {
@@ -137,19 +140,14 @@ func unobjctify(_ item: Any) -> Any? {
      */
     switch item {
     case is String:
-        Log.debug("\(String(describing: item)) is a String")
         return item
     case is Int:
-        Log.debug("\(String(describing: item)) is an Int")
         return item
     case is Double:
-        Log.debug("\(String(describing: item)) is a Double")
         return item
     case is NSDate:
-        Log.debug("\(String(describing: item)) is NSDate. Trying to convert.")
         return (item as! String)
     case is Dictionary<String, Any>:
-        Log.debug("\(String(describing: item)) is a Dictionary")
         for key in (item as! [String:Any]).keys {
             return unobjctify(key)
         }
@@ -157,7 +155,6 @@ func unobjctify(_ item: Any) -> Any? {
             return unobjctify(value)
         }
     default:
-        Log.debug("\(String(describing: item)) is unchecked type")
         return item
     }
     return item
@@ -224,6 +221,7 @@ func waitForScript(scriptName: String, repeatCount:Int = 3, pause:UInt32 = 1) ->
     while count < repeatCount {
         if scriptIsRunning(scriptName: scriptName) {
             sleep(pause)
+            print(count)
             count += 1
         } else {
             return false

@@ -21,6 +21,7 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		9D3EB05F27C3FBA700473617 /* Sal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D3EB05E27C3FBA700473617 /* Sal.swift */; };
 		OBJ_100 /* CommandConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_46 /* CommandConfiguration.swift */; };
 		OBJ_101 /* EnumerableFlag.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_47 /* EnumerableFlag.swift */; };
 		OBJ_102 /* ExpressibleByArgument.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_48 /* ExpressibleByArgument.swift */; };
@@ -135,6 +136,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		9D3EB05E27C3FBA700473617 /* Sal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sal.swift; sourceTree = "<group>"; };
 		OBJ_10 /* AppleUpdates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleUpdates.swift; sourceTree = "<group>"; };
 		OBJ_11 /* MachineInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MachineInfo.swift; sourceTree = "<group>"; };
 		OBJ_12 /* Munki.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Munki.swift; sourceTree = "<group>"; };
@@ -442,6 +444,7 @@
 				OBJ_11 /* MachineInfo.swift */,
 				OBJ_12 /* Munki.swift */,
 				OBJ_13 /* Profiles.swift */,
+				9D3EB05E27C3FBA700473617 /* Sal.swift */,
 			);
 			path = Modules;
 			sourceTree = "<group>";
@@ -604,6 +607,7 @@
 				OBJ_149 /* Logger.swift in Sources */,
 				OBJ_150 /* Machine.swift in Sources */,
 				OBJ_151 /* Prefs.swift in Sources */,
+				9D3EB05F27C3FBA700473617 /* Sal.swift in Sources */,
 				OBJ_152 /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
