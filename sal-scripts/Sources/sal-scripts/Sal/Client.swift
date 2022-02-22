@@ -113,9 +113,7 @@ class SalClient {
                 Log.error("error submitting results: \(String(describing: error))")
                 return
             }
-            Log.info("submission response: \(response)")
-            print(response.statusCode)
-            
+            Log.info("submission response: \(response)")            
         }
         task.resume()
     }
