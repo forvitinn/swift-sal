@@ -1,6 +1,4 @@
 name: Build universal pkg
-
-
 on:
   push:
     branches:
@@ -26,7 +24,10 @@ jobs:
         export PATH="$PATH:$pwd"
         
     - name: Build pkg
-      run: make universal
+      run: |
+      make universal
+      ls -laGh
+
 
     - name: get environment variables
       id: get_env_var
