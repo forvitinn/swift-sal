@@ -249,3 +249,19 @@ func submissionEncode(input: String) -> String {
      */
     return Data(input.utf8).base64EncodedString()
 }
+
+func readBytesFromFile(filePath: String) -> Data? {
+    if fileManager.fileExists(atPath: filePath) {
+        if let data = NSData(contentsOfFile: filePath) {
+            var readBuffer = Array<UInt8>(count:sizeof(Int32), repeatedValue: 0)
+            data.getBytes(UnsafeMutableRawPointer(), range: 0)
+//                var buffer = [UInt8]?(count: data.length, repeatedValue: 0)
+//                var buffer = Array<UInt8>(count: 1024, repeatedValue: 0)
+//                data.getBytes(&buffer, length: data.length)
+//                bytes = buffer
+        }
+
+    }
+
+
+}

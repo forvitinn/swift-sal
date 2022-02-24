@@ -18,7 +18,7 @@ struct Args {
     var post: Bool = false
 
     var random: Bool = false
-    var delay: UInt32 = 0
+    var delay = UInt32()
 }
 
 var args = Args()
@@ -45,7 +45,7 @@ struct ReadPreferences: ParsableCommand {
     var key: String = ""
 
     @Option(name: .shortAndLong, help: "Delay in seconds before running.")
-    var delay: UInt32
+    var delay: UInt32 = 0
 
     @Option(name: .shortAndLong, help: "Randomize delay time.")
     var random: Bool = false
@@ -83,7 +83,7 @@ func salSubmit() {
         initLogger(logLevel: "DEBUG")
     }
 
-    if args.delay != 0 {
+    if args.delay != nil {
         if args.random {
             let randomInt = Int.random(in: 0 ... Int(args.delay))
             sleep(UInt32(randomInt))
@@ -186,6 +186,7 @@ func salSubmit() {
       Speed up manual runs by skipping these potentially slow-running,
       and infrequently changing tasks.
      */
+    sendInventory(serial: getSerialNumber(), client: client)
 }
 
 func getArgs() {
@@ -222,6 +223,7 @@ func runPlugins(runType: String) {
     }
 
     setCheckinResults(moduleName: "plugin_results", data: pluginResults)
+    
 }
 
 func runExternalScripts(runType: String) {
@@ -377,4 +379,44 @@ func sendCheckin(report: [String: Any], client: SalClient) -> (responseString: S
     let (res, response) = client.readResponse()
 
     return (res, response)
+}
+
+func sendInventory(serial: String, client: SalClient) {
+    Log.info("Processing inventory...")
+    let managedInstallDir = getAppPref(prefName: "ManagedInstallDir", domain: "ManagedInstalls")
+    let inventoryPlist = (managedInstallDir! as! String) +  "/ApplicationInventory.plist"
+    Log.debug("ApplicationInventory.plist Path: \(inventoryPlist)")
+    
+//    do {
+//        let compressedData = try (yourData as NSData).compressed(using: .lzfse)
+//        // use your compressed data
+//    } catch {
+//        print(error.localizedDescription)
+//    }
+    
+    let inventoryHash = getHash(inputFile: inventoryPlist)
+    Log.debug("inventory hash: \(inventoryHash)")
+    let serverHash = ""
+    
+    let get = client.get(requestUrl: "inventory/hash/\(serial)/")
+    client.submitRequest(method: "GET", request: get)
+    let (res, response) = client.readResponse()
+    
+    if response.statusCode > 400 {
+        Log.debug("Failed to get inventory hash: \(response.statusCode) \(response.allHeaderFields)")
+        return
+    }
+    
+    if response.statusCode == 200 {
+        readBytesFromFile(filePath: inventoryPlist)
+        if res != inventoryHash {
+            Log.info("Inventory is out of date; submitting...")
+//            let inventorySubmission = [
+//                "serial": serial,
+//
+//            ]
+        }
+    }
+    
+    
 }
