@@ -25,10 +25,9 @@ jobs:
         
     - name: Build pkg
       run: |
-        make universal
         ls -laGh
-
-
+        make universal
+      
     - name: get environment variables
       id: get_env_var
       run: |
