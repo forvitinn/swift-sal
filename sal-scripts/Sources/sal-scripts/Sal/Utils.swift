@@ -18,12 +18,40 @@ extension CharacterSet {
     static let whitespacesNewlinesAndNulls = CharacterSet.whitespacesAndNewlines.union(CharacterSet(["\0"]))
 }
 
+extension String {
+    var boolValue: Bool {
+        return (self as NSString).boolValue
+    }
+}
+
 extension Dictionary {
     mutating func merge(dict: [Key: Value]) {
         for (k, v) in dict {
             updateValue(v, forKey: k)
         }
     }
+}
+
+func convertToListOfDictionary(text: String) -> [[String: Any]]? {
+    if let data = text.data(using: .utf8) {
+        do {
+            return try JSONSerialization.jsonObject(with: data, options: []) as? [[String: Any]]
+        } catch {
+            print(error.localizedDescription)
+        }
+    }
+    return nil
+}
+
+func convertToDictionary(text: String) -> [String: Any]? {
+    if let data = text.data(using: .utf8) {
+        do {
+            return try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
+        } catch {
+            print(error.localizedDescription)
+        }
+    }
+    return nil
 }
 
 func dictToJson(dictItem: [String: Any]) -> String {
@@ -64,7 +92,7 @@ func exec(command: String, arguments: [String] = [], wait: Bool? = false) -> (er
         Log.debug("Error running task. command: \(command). args: \(arguments)")
         return ("\(error)", "")
     }
-    
+
     if wait! {
         task.waitUntilExit()
     }

@@ -15,12 +15,8 @@ func SalReport() -> [String: Any] {
             "sal_version": salVersion,
             "key": salPref("key"),
         ],
-        "facts": ["checkin_module_version": salVersion]
+        "facts": ["checkin_module_version": salVersion],
     ]
-    
+
     return ["Sal": salSubmission]
 }
-
-
-
-

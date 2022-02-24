@@ -1,21 +1,28 @@
-#!/usr/local/sal/Python.framework/Versions/Current/bin/python3
-"""Run all scripts found in the Munki preflight.d directory."""
-
+#!/usr/local/munki/munki-python
 
 import sys
-
-import sal
-
+import os
+import subprocess
 
 PREFLIGHT_DIR = '/usr/local/munki/preflight.d'
 
 
-def main():
-    try:
-        sal.run_scripts(PREFLIGHT_DIR, sys.argv[1], error=True)
-    except RuntimeError as e:
-        sys.exit(e)
+def iter_preflight_scripts(preflight_dir):
+    for script in os.listdir(preflight_dir):
+        script_path = os.path.join(preflight_dir, script)
+        if not os.access(script_path, os.X_OK):
+            print(f"'{script_path}' is not executable or has bad permissions")
+        else:
+            yield script_path
 
 
-if __name__ == "__main__":
-    main()
+def execute_preflight_scripts(preflight_dir):
+    for script_path in iter_preflight_scripts(preflight_dir):
+        try:
+            subprocess.call([script_path, sys.argv[1]])
+        except OSError:
+            print(f"Could not execute script '{script_path}'!")
+
+
+if __name__ == '__main__':
+    execute_preflight_scripts(PREFLIGHT_DIR)

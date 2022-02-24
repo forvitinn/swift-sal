@@ -2,8 +2,12 @@ BINARY_NAME=sal-submit
 CODE_SIGN_IDENTITY=""
 
 clean:
+	# remove old builds
 	rm -rf build/
 	rm -rf sal-scripts/.build/
+	# remove binaries
+	rm -f payload/usr/local/munki/report_broken_client
+	rm -f payload/usr/local/sal/bin/${BINARY_NAME}
 
 sign:
 	codesign --force --sign ${CODE_SIGN_IDENTITY} --verbose --preserve-metadata= payload/usr/local/sal/bin/${BINARY_NAME}

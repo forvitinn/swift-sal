@@ -2,6 +2,6 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "self:">
+      location = "self:/Users/john.peterson/Documents/Personal/Github/swift-sal/sal-scripts/sal-scripts.xcodeproj">
    </FileRef>
 </Workspace>

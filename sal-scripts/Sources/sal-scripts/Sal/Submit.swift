@@ -4,15 +4,23 @@
 //
 //  Created by John Peterson on 1/17/22.
 //
-import Foundation
 import ArgumentParser
+import Foundation
 
 struct Args {
     var debug: Bool = false
     var key: String = ""
     var url: String = ""
     var verbose: Bool = false
+
+    var scripts: Bool = false
+    var pre: Bool = false
+    var post: Bool = false
+
+    var random: Bool = false
+    var delay: UInt32 = 0
 }
+
 var args = Args()
 
 extension URL {
@@ -26,21 +34,44 @@ extension URL {
 struct ReadPreferences: ParsableCommand {
     @Option(name: .shortAndLong, help: "Enable full debug output.")
     var debug: Bool = false
-    
+
     @Option(name: .shortAndLong, help: "Enable verbose output.")
     var verbose: Bool = false
-  
+
     @Option(name: .shortAndLong, help: "Override the server URL for testing.")
     var url: String = ""
-    
+
     @Option(name: .shortAndLong, help: "Override the machine group key.")
     var key: String = ""
-    
-    func run() throws -> ()  {
+
+    @Option(name: .shortAndLong, help: "Delay in seconds before running.")
+    var delay: UInt32
+
+    @Option(name: .shortAndLong, help: "Randomize delay time.")
+    var random: Bool = false
+
+    @Flag(help: "If set, run munki pre/post install scripts.")
+    var scripts: Bool = false
+
+    @Flag(name: .long, help: "Run munki preflight script.")
+    var pre: Bool = false
+
+    @Flag(name: .long, help: "Run munki postflight script.")
+    var post: Bool = false
+
+    func run() throws {
         args = Args(
-            debug: debug, key: key, url: url, verbose: verbose
+            debug: debug,
+            key: key,
+            url: url,
+            verbose: verbose,
+            scripts: scripts,
+            pre: pre,
+            post: post,
+            random: random,
+            delay: delay
         )
-  }
+    }
 }
 
 let CHECKIN_MODULES_DIR = "/usr/local/sal/checkin_modules"
@@ -50,32 +81,52 @@ func salSubmit() {
     initLogger(logLevel: "INFO")
     if args.debug || args.verbose {
         initLogger(logLevel: "DEBUG")
-        
-        var prefs = prefsReport()
-        
-        if !args.url.isEmpty {
-            prefs["ServerURL"] = ["value": args.url, "forced": "commandline"]
+    }
+
+    if args.delay != 0 {
+        if args.random {
+            let randomInt = Int.random(in: 0 ... Int(args.delay))
+            sleep(UInt32(randomInt))
+        } else {
+            sleep(args.delay)
         }
-        
-        if !args.key.isEmpty {
-            prefs["key"] = ["value": args.key, "forced": "commandline"]
+    }
+
+    if args.scripts {
+        if args.pre {
+            munkiPreFlight()
+            exit(0)
         }
-        
-        var prefType = ""
-        Log.debug("Sal client prefs:")
-        for (key, value) in prefs {
-            let val = (value as! [String:Any])
-            if let forced = (val["forced"] as? Bool) {
-                if forced {
-                    prefType = "profile"
-                } else {
-                    prefType = "prefs"
-                }
-            } else if (val["forced"] as? String) == "commandline" {
+
+        if args.post {
+            munkiPostFlight()
+            exit(0)
+        }
+    }
+    var prefs = prefsReport()
+
+    if !args.url.isEmpty {
+        prefs["ServerURL"] = ["value": args.url, "forced": "commandline"]
+    }
+
+    if !args.key.isEmpty {
+        prefs["key"] = ["value": args.key, "forced": "commandline"]
+    }
+
+    var prefType = ""
+    Log.debug("Sal client prefs:")
+    for (key, value) in prefs {
+        let val = (value as! [String: Any])
+        if let forced = (val["forced"] as? Bool) {
+            if forced {
+                prefType = "profile"
+            } else {
                 prefType = "prefs"
             }
-            Log.debug("\t\(key): \(String(describing: val["value"]!)) \(prefType) ")
+        } else if (val["forced"] as? String) == "commandline" {
+            prefType = "prefs"
         }
+        Log.debug("\t\(key): \(String(describing: val["value"]!)) \(prefType) ")
     }
     let user = ProcessInfo().environment["USER"]
     if user! != "root" {
@@ -94,7 +145,7 @@ func salSubmit() {
 
     let scriptResults = gatherInfo()
     saveResults(data: scriptResults)
-    
+
     for message in scriptResults.keys {
         Log.debug(message)
     }
@@ -104,44 +155,53 @@ func salSubmit() {
     let runType = getRunType(submission: submission)
 
     runPlugins(runType: runType)
-    
+
     let client = setupSalClient()
 
     if args.url != "" {
         client.baseUrl(url: args.url)
         Log.debug("Server URL overridden with \(args.url)")
     }
-    
+
     if args.key != "" {
         client.auth(creds: ["sal", args.key])
         // override the key in the report since its used
         // for querying.
-        if let _ = report["Sal"] as? [String:[String:Any]] {
-            var update = report["Sal"] as? [String:[String:Any]]
+        if let _ = report["Sal"] as? [String: [String: Any]] {
+            var update = report["Sal"] as? [String: [String: Any]]
             update!["extra_data"]!.updateValue(args.key, forKey: "key")
             report.updateValue(update as Any, forKey: "Sal")
         }
         Log.debug("Machine group key overridden with \(args.key)")
     }
 
-    sendCheckin(report: report, client: client)
-    
+    let (res, response) = sendCheckin(report: report, client: client)
+
+    if response.statusCode == 200 {
+        setPref("LastCheckDate", getUTCISOTime(date: Date()))
+        cleanResults()
+    }
+
+    /*
+      Speed up manual runs by skipping these potentially slow-running,
+      and infrequently changing tasks.
+     */
 }
 
 func getArgs() {
     ReadPreferences.main()
 }
 
-func getRunType(submission: [String:Any]) -> String {
-    var munki = [String:Any]()
+func getRunType(submission: [String: Any]) -> String {
+    var munki = [String: Any]()
     if let m = submission["Munki"] {
-        munki = m as! [String : Any]
+        munki = m as! [String: Any]
     }
-    var munkiExtras = [String:Any]()
+    var munkiExtras = [String: Any]()
     if let e = munki["extra_data"] {
-        munkiExtras = e as! [String : Any]
+        munkiExtras = e as! [String: Any]
     }
- 
+
     if let _ = munkiExtras["runtype"] {
         return munkiExtras["runtype"] as! String
     }
@@ -152,7 +212,7 @@ func getRunType(submission: [String:Any]) -> String {
 func runPlugins(runType: String) {
     Log.info("Processing plugins...")
     let pluginResultsPath = "/usr/local/sal/plugin_results.plist"
-    
+
     runExternalScripts(runType: runType)
     let pluginResults = getPluginResults(pluginResultsPlist: pluginResultsPath)
     do {
@@ -160,30 +220,30 @@ func runPlugins(runType: String) {
     } catch {
         Log.debug("Error removing temporary profile directory")
     }
-    
+
     setCheckinResults(moduleName: "plugin_results", data: pluginResults)
 }
 
 func runExternalScripts(runType: String) {
     let externalScriptsDir = "/usr/local/sal/external_scripts"
 
-    var isDir : ObjCBool = false
+    var isDir: ObjCBool = false
     if fileManager.fileExists(atPath: externalScriptsDir, isDirectory: &isDir) {
         if isDir.boolValue {
-            //https://stackoverflow.com/questions/34388582/get-subdirectories-using-swift
+            // https://stackoverflow.com/questions/34388582/get-subdirectories-using-swift
             do {
                 let url = URL(fileURLWithPath: externalScriptsDir)
-                
+
                 let subDirs = try url.subDirectories()
-                
+
                 for folder in subDirs {
                     if folder.lastPathComponent.starts(with: ".") {
                         continue
                     }
                     let scripts = try FileManager.default.contentsOfDirectory(at: folder.absoluteURL, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles])
-                    
+
                     for script in scripts {
-                        if !fileManager.isExecutableFile(atPath:  script.path) {
+                        if !fileManager.isExecutableFile(atPath: script.path) {
                             Log.warning("\(script) is not executable! Skipping.")
                         } else {
                             let (err, _) = exec(command: script.path, arguments: [runType])
@@ -195,9 +255,9 @@ func runExternalScripts(runType: String) {
                         }
                     }
                 }
-           } catch {
-               Log.debug("error running script: \(error)")
-           }
+            } catch {
+                Log.debug("error running script: \(error)")
+            }
         }
     } else {
         Log.debug("\(externalScriptsDir) does not exist")
@@ -208,10 +268,10 @@ func getPluginResults(pluginResultsPlist: String) -> Any {
     if fileManager.fileExists(atPath: pluginResultsPlist) {
         do {
             let plistData = try readPlist(pluginResultsPlist)
-            if let result = plistData as? [String:Any] {
+            if let result = plistData as? [String: Any] {
                 return result
-            } else if let result = plistData as? [[String:Any]] {
-                var res = [String:Any]()
+            } else if let result = plistData as? [[String: Any]] {
+                var res = [String: Any]()
                 for item in result {
                     for (key, value) in item {
                         res.updateValue(value, forKey: key)
@@ -221,14 +281,14 @@ func getPluginResults(pluginResultsPlist: String) -> Any {
             } else {
                 Log.debug("unknown plistData format")
             }
-            
+
         } catch {
             Log.warning("Could not read external data plist.")
         }
     } else {
         Log.warning("No external data plist found.")
     }
-    return [String:Any]()
+    return [String: Any]()
 }
 
 // https://www.hackingwithswift.com/articles/108/how-to-use-regular-expressions-in-swift
@@ -238,13 +298,12 @@ func removeBlocklistedMessages() {
 
     if (patterns as! String) == "None" {
         let submission = getCheckinResults()
-        
+
         for results in submission.values {
-            if let res = results as? [String:Any] {
-                var removals = [[String:Any]]()
+            if let res = results as? [String: Any] {
+                var removals = [[String: Any]]()
 
-                if let message = res["messages"] as? [String:Any] {
-
+                if let message = res["messages"] as? [String: Any] {
                     if let subject = message["text"] {
                         do {
                             let range = NSRange(location: 0, length: (subject as! String).utf16.count)
@@ -253,7 +312,6 @@ func removeBlocklistedMessages() {
                                 removals.append(message)
                             }
                         }
-
                     }
                 }
 
@@ -262,7 +320,7 @@ func removeBlocklistedMessages() {
                     for removal in removals {
                         for (key, _) in removal {
                             Log.debug("Removing message \(removal)")
-                            var r = results as! [String:Any]
+                            var r = results as! [String: Any]
                             r.removeValue(forKey: key)
                         }
                     }
@@ -278,22 +336,22 @@ func removeBlocklistedMessages() {
 func removeSkippedFacts() {
     var update = false
     var submission = getCheckinResults()
-    
+
     let skipFacts = salPref("SkipFacts") as! [String]
-    if !(skipFacts).isEmpty {
+    if !skipFacts.isEmpty {
         for (key, results) in submission {
-            if let _ = results as? [String:Any] {
-                var res = results as? [String:Any]
+            if let _ = results as? [String: Any] {
+                var res = results as? [String: Any]
                 var removals = [String]()
-                
-                if let facts = (res!["facts"] as? [String:Any]) {
+
+                if let facts = (res!["facts"] as? [String: Any]) {
                     for fact in facts.keys {
                         if skipFacts.contains(fact) {
                             removals.append(fact)
                         }
                     }
                 }
-                
+
                 if !removals.isEmpty {
                     update = true
                     for removal in removals {
@@ -310,9 +368,13 @@ func removeSkippedFacts() {
     }
 }
 
-func sendCheckin(report: [String:Any], client: SalClient) {
+func sendCheckin(report: [String: Any], client: SalClient) -> (responseString: String, httpResponse: HTTPURLResponse) {
     Log.debug("Sending report")
-    
+
     let post = client.post(requestUrl: "checkin/", jsonData: report)
     client.submitRequest(method: "POST", request: post)
+
+    let (res, response) = client.readResponse()
+
+    return (res, response)
 }

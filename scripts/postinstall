@@ -12,5 +12,4 @@ else
     /usr/bin/find "$3/usr/local/sal" -name '*.pyc' -delete
 fi
 
-# This shouldn't kill the whole package install
 exit 0

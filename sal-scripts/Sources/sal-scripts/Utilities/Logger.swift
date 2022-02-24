@@ -12,20 +12,20 @@ import os
  Combined ideas from http://www.filtercode.com/swift/logger-swift
  and https://gist.github.com/cbess/8fa7b9e2330a07020541 to get a logger
  closer to the python logger I was looking for.
- 
+
  Log level is set based on a preference key that defaults to info if not set.
-*/
+ */
 
 struct Log {
     let file, function: String
     let line: Int
-    
+
     init(file: String = #file, line: Int = #line, function: String = #function) {
         self.file = file
         self.line = line
         self.function = function
     }
-    
+
     static func info(_ msg: String, file: String = #file, line: Int = #line, function: String = #function) {
         Logger.sharedInstance.logMessage(message: msg, logLevel: .Info, file: file, line: line, function: function)
     }
@@ -37,7 +37,7 @@ struct Log {
     static func error(_ msg: String, file: String = #file, line: Int = #line, function: String = #function) {
         Logger.sharedInstance.logMessage(message: msg, logLevel: .Error, file: file, line: line, function: function)
     }
-    
+
     static func warning(_ msg: String, file: String = #file, line: Int = #line, function: String = #function) {
         Logger.sharedInstance.logMessage(message: msg, logLevel: .Warning, file: file, line: line, function: function)
     }
@@ -63,18 +63,16 @@ class Logger {
 
         return dateFormatter.string(from: date)
     }
-    
-    func logMessage(message: String , logLevel: LogLevel = .Info, file: String, line: Int, function: String) {
 
-        if self.verbosityLevel.rawValue > LogLevel.None.rawValue && logLevel.rawValue <= self.verbosityLevel.rawValue {
+    func logMessage(message: String, logLevel: LogLevel = .Info, file: String, line: Int, function: String) {
+        if verbosityLevel.rawValue > LogLevel.None.rawValue, logLevel.rawValue <= verbosityLevel.rawValue {
             let fname = (file as NSString).lastPathComponent
-            print("[\(self.loggerDate()) \(fname):\(function):\(line)] \(message)")
+            print("[\(loggerDate()) \(fname):\(function):\(line)] \(message)")
         }
     }
 
     class var sharedInstance: Logger {
-
-        struct Singleton {
+        enum Singleton {
             static let instance = Logger()
         }
 
@@ -95,4 +93,3 @@ func initLogger(logLevel: String) {
         Logger.sharedInstance.logMessage(message: "Log level set to INFO", logLevel: .Info, file: #file, line: #line, function: #function)
     }
 }
-

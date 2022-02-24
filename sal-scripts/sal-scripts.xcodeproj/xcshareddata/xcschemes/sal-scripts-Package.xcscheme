@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "sal-scripts::sal-scripts"
-               BuildableName = "sal-scripts"
+               BuildableName = "munki-scripts"
                BlueprintName = "sal-scripts"
                ReferencedContainer = "container:sal-scripts.xcodeproj">
             </BuildableReference>
@@ -33,7 +33,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "sal-scripts::sal-scriptsTests"
-               BuildableName = "sal-scriptsTests.xctest"
+               BuildableName = "munki-scriptsTests.xctest"
                BlueprintName = "sal-scriptsTests"
                ReferencedContainer = "container:sal-scripts.xcodeproj">
             </BuildableReference>
@@ -55,7 +55,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "sal-scripts::sal-scripts"
-            BuildableName = "sal-scripts"
+            BuildableName = "munki-scripts"
             BlueprintName = "sal-scripts"
             ReferencedContainer = "container:sal-scripts.xcodeproj">
          </BuildableReference>

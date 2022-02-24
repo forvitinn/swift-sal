@@ -18,15 +18,16 @@ func getSerial() -> String {
     return serialNumberAsCFString?.takeUnretainedValue() as! String
 }
 
-let defaults = UserDefaults.init(suiteName: "com.github.salopensource.sal")
+let defaults = UserDefaults(suiteName: "com.github.salopensource.sal")
 
 let key = defaults?.string(forKey: "key") ?? ""
 
-var urlString =  defaults?.string(forKey: "ServerURL") ?? ""
+var urlString = defaults?.string(forKey: "ServerURL") ?? ""
 if urlString.hasSuffix("/") {
     let trailingSlash = urlString.lastIndex(of: "/")
     urlString.remove(at: trailingSlash!)
 }
+
 urlString = urlString + "/report_broken_client/"
 
 let serial = getSerial()
@@ -37,7 +38,7 @@ let login = "sal"
 let password = key
 
 let userPasswordData = "\(login):\(password)".data(using: .utf8)
-let base64EncodedCredential = userPasswordData!.base64EncodedString(options: Data.Base64EncodingOptions.init(rawValue: 0))
+let base64EncodedCredential = userPasswordData!.base64EncodedString(options: Data.Base64EncodingOptions(rawValue: 0))
 let authString = "Basic \(base64EncodedCredential)"
 
 // set up the body
@@ -47,17 +48,17 @@ body.append("&serial=\(serial)")
 body.append("&key=\(key)")
 // set up the URL session
 
-let session = URLSession.init(configuration: URLSessionConfiguration.ephemeral, delegate: nil, delegateQueue: nil)
+let session = URLSession(configuration: URLSessionConfiguration.ephemeral, delegate: nil, delegateQueue: nil)
 
 var dataTask: URLSessionDataTask?
-var req = URLRequest.init(url: URL.init(string: urlString)!)
+var req = URLRequest(url: URL(string: urlString)!)
 
 let sema = DispatchSemaphore(value: 0)
 
 let headers = [
     "Accept": "application/text",
     "Content-Type": "application/x-www-form-urlencoded",
-    "Authorization" : authString,
+    "Authorization": authString,
 ]
 
 req.allHTTPHeaderFields = headers
@@ -66,13 +67,14 @@ req.httpMethod = "POST"
 req.httpBody = body.data(using: .utf8)
 
 dataTask = session.dataTask(with: req) { data, response, error in
-    
+
     if let error = error {
         print(error.localizedDescription)
     } else if let data = data,
-        let response = response as? HTTPURLResponse,
-        response.statusCode == 200 {
-        let responseData:String  = String(data:data, encoding:String.Encoding.utf8)!
+              let response = response as? HTTPURLResponse,
+              response.statusCode == 200
+    {
+        let responseData = String(data: data, encoding: String.Encoding.utf8)!
         print(responseData)
     } else {
         print("really no beans")
