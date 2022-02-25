@@ -28,7 +28,7 @@ jobs:
         cd sal-scripts; swift build -c release --arch arm64 --arch x86_64
         xcodebuild -project "${GITHUB_WORKSPACE}"/report_broken_client/report_broken_client.xcodeproj -configuration Release
         cd ../
-        ls -laGh sal-scripts/*
+        ls -laGh sal-scripts/.build/*
         
         mv report_broken_client/build/Release/report_broken_client payload/usr/local/munki/report_broken_client
         mv sal-scripts/.build/apple/Products/Release/sal-scripts payload/usr/local/sal/bin/sal-submit
