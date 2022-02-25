@@ -29,9 +29,9 @@ jobs:
         xcodebuild -project "${GITHUB_WORKSPACE}"/report_broken_client/report_broken_client.xcodeproj -configuration Release
         cd ../
         mv report_broken_client/build/Release/report_broken_client payload/usr/local/munki/report_broken_client
-        mkdir -p payload/usr/local/sal/bin/
         mv -v sal-scripts/.build/apple/Products/Release/sal-scripts payload/usr/local/sal/bin/sal-submit
         chmod +X munkipkg
+        rm -f payload/usr/local/sal/bin/.gitkeep
         ./munkipkg .
 
     - name: get environment variables
