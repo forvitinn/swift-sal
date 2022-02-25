@@ -41,6 +41,6 @@ jobs:
 
     - name: Release
       uses: softprops/action-gh-release@v1
-      if: startsWith(github.ref, 'refs/tags/')
       with:
+        tag_name: ${{env.PKG_VERSION}}
         files: build/sal-scripts-${{env.PKG_VERSION}}.pkg
