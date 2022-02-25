@@ -5,6 +5,7 @@ clean:
 	# remove old builds
 	rm -rf build/
 	rm -rf sal-scripts/.build/
+	rm -rf report_broken_client/build/
 	# remove binaries
 	rm -f payload/usr/local/munki/report_broken_client
 	rm -f payload/usr/local/sal/bin/${BINARY_NAME}
