@@ -2,7 +2,7 @@ name: Build universal pkg
 on:
   push:
     branches:
-    - update-finish
+    - main
     paths-ignore:
     - '**/README.md'
 
@@ -11,19 +11,19 @@ jobs:
     runs-on: macos-11
 
     steps:
-    - name: Checkout this repo
+    - name: checkout this repo
       uses: actions/checkout@v2
       with:
         fetch-depth: 0
 
-    - name: Install munkipkg
+    - name: install munkipkg
       run: | 
         munki_pkg_dir=$(mktemp -d -t 'munki_pkg_dir')
         curl -L https://raw.githubusercontent.com/munki/munki-pkg/main/munkipkg --output munkipkg
         chmod +x munkipkg
         export PATH="$PATH:$pwd"
         
-    - name: Build pkg
+    - name: build pkg
       run: |
         cd sal-scripts; swift build -c release --arch arm64 --arch x86_64
         xcodebuild -project "${GITHUB_WORKSPACE}"/report_broken_client/report_broken_client.xcodeproj -configuration Release
@@ -39,7 +39,7 @@ jobs:
       run: |
           echo "PKG_VERSION=$(cat build-info.json| jq -r .version)" >> $GITHUB_ENV
 
-    - name: Release
+    - name: release the kraken
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{env.PKG_VERSION}}
