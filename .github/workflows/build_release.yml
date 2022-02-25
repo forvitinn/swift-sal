@@ -39,8 +39,7 @@ jobs:
       run: |
           echo "PKG_VERSION=$(cat build-info.json| jq -r .version)" >> $GITHUB_ENV
 
-    - name: Upload packages
-      uses: actions/upload-artifact@v1
+    - name: Release
+      uses: softprops/action-gh-release@v1
       with:
-        name: packages
-        path: build/sal-scripts-${{env.PKG_VERSION}}.pkg
+        files: build/sal-scripts-${{env.PKG_VERSION}}.pkg
