@@ -27,7 +27,7 @@ jobs:
       run: |
         ls -laGh
         cd sal-scripts; swift build -c release --arch arm64 --arch x86_64
-        xcodebuild -project report_broken_client/report_broken_client.xcodeproj -configuration Release
+        xcodebuild -project "${GITHUB_WORKSPACE}"/report_broken_client/report_broken_client.xcodeproj -configuration Release
         mv "${GITHUB_WORKSPACE}"/report_broken_client/build/Release/report_broken_client "$GITHUB_WORKSPACE"/payload/usr/local/munki/report_broken_client
         mv "${GITHUB_WORKSPACE}"/sal-scripts/.build/apple/Products/Release/sal-scripts "$GITHUB_WORKSPACE"/payload/usr/local/sal/bin/sal-submit
         munkipkg .
