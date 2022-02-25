@@ -20,7 +20,7 @@ let package = Package(
             name: "sal-scripts",
             dependencies: [
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
-                .product(name: "SWCompression", package: "SWCompression")
+                .product(name: "SWCompression", package: "SWCompression"),
             ]
         ),
         .testTarget(

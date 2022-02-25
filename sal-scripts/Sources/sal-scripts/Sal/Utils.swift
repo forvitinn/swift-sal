@@ -9,8 +9,8 @@ import CloudKit
 import CommonCrypto
 import CryptoKit
 import Foundation
-import SystemConfiguration
 import SWCompression
+import SystemConfiguration
 
 let ResultsPath = "/usr/local/sal/checkin_results.json"
 
@@ -232,7 +232,7 @@ func saveResults(data: [String: Any]) {
     } catch {
         Log.error("could not update \(ResultsPath): \(error)")
     }
-    
+
     writeJson(dataObject: data, filepath: ResultsPath)
 }
 
@@ -262,4 +262,8 @@ func readBytesFromFile(filePath: String) -> Data? {
     } else {
         return nil
     }
+}
+
+func dictionariesEqual(lhs: [String: Any], rhs: [String: Any]) -> Bool {
+    return NSDictionary(dictionary: lhs).isEqual(to: rhs)
 }

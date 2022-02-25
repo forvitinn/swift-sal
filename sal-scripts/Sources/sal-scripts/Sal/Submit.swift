@@ -131,7 +131,7 @@ func salSubmit() {
     let user = ProcessInfo().environment["USER"]
     if user! != "root" {
         Log.info("Manually running this script requires sudo.")
-//        exit(3)
+        exit(3)
     }
     if waitForScript(scriptName: "sal-submit") {
         Log.debug("Another instance of sal-submit is already running. Exiting.")
@@ -175,7 +175,7 @@ func salSubmit() {
         Log.debug("Machine group key overridden with \(args.key)")
     }
 
-    let (res, response) = sendCheckin(report: report, client: client)
+    let (_, response) = sendCheckin(report: report, client: client)
 
     if response.statusCode == 200 {
         setPref("LastCheckDate", getUTCISOTime(date: Date()))
@@ -188,6 +188,7 @@ func salSubmit() {
      */
     sendInventory(serial: getSerialNumber(), client: client)
     sendCatalogs(client: client)
+    sendProfiles(client: client)
 }
 
 func getArgs() {
@@ -224,7 +225,6 @@ func runPlugins(runType: String) {
     }
 
     setCheckinResults(moduleName: "plugin_results", data: pluginResults)
-    
 }
 
 func runExternalScripts(runType: String) {
@@ -299,38 +299,58 @@ func removeBlocklistedMessages() {
     var update = false
     let patterns = salPref("MessageBlacklistPatterns")
 
-    if (patterns as! String) == "None" {
-        let submission = getCheckinResults()
+    if patterns is [Any] {
+        let regPatterns = (patterns as! [String])
+        if !regPatterns.isEmpty {
+            var submission = getCheckinResults()
 
-        for results in submission.values {
-            if let res = results as? [String: Any] {
-                var removals = [[String: Any]]()
+            for results in submission.values.indices {
+                if let res = submission[results].value as? [String: Any] {
+                    var removals = [[String: Any]]()
 
-                if let message = res["messages"] as? [String: Any] {
-                    if let subject = message["text"] {
-                        do {
-                            let range = NSRange(location: 0, length: (subject as! String).utf16.count)
-                            let regex = try! NSRegularExpression(pattern: patterns as! String)
-                            if regex.firstMatch(in: subject as! String, options: [], range: range) != nil {
-                                removals.append(message)
+                    if let messages = res["messages"] as? [[String: Any]] {
+                        for message in messages {
+                            let subject = message["text"]
+                            if subject != nil {
+                                for pattern in regPatterns {
+                                    do {
+                                        let range = NSRange(location: 0, length: (subject as! String).utf16.count)
+                                        let regex = try NSRegularExpression(pattern: pattern)
+                                        if regex.firstMatch(in: subject as! String, options: [], range: range) != nil {
+                                            removals.append(message)
+                                        }
+                                    } catch {
+                                        Log.debug("could not create regex: \(error)")
+                                    }
+                                }
                             }
                         }
-                    }
-                }
 
-                if removals.count > 0 {
-                    update = true
-                    for removal in removals {
-                        for (key, _) in removal {
-                            Log.debug("Removing message \(removal)")
-                            var r = results as! [String: Any]
-                            r.removeValue(forKey: key)
+                        if removals.count > 0 {
+                            update = true
+                            var messageVal = ((submission[results].value as! [String: Any])["messages"]! as! [[String: Any]])
+                            for removal in removals {
+                                Log.debug("Removing message \(removal)")
+                                for item in ((submission[results].value as! [String: Any])["messages"]! as! [[String: Any]]).indices {
+                                    if dictionariesEqual(lhs: removal, rhs: messageVal[item]) {
+                                        messageVal.remove(at: item)
+                                    }
+                                }
+                            }
+                            let updateKey = submission[results].key
+                            var updateValues = submission[updateKey] as! [String: Any]
+
+                            updateValues.updateValue(messageVal, forKey: "messages")
+                            submission.updateValue(updateValues, forKey: updateKey)
                         }
+                    } else {
+                        continue
                     }
                 }
+            }
 
-            } else {
-                continue
+            if update {
+                saveResults(data: submission)
             }
         }
     }
@@ -385,18 +405,18 @@ func sendCheckin(report: [String: Any], client: SalClient) -> (responseString: S
 func sendInventory(serial: String, client: SalClient) {
     Log.info("Processing inventory...")
     let managedInstallDir = getAppPref(prefName: "ManagedInstallDir", domain: "ManagedInstalls")
-    let inventoryPlist = (managedInstallDir! as! String) +  "/ApplicationInventory.plist"
+    let inventoryPlist = (managedInstallDir! as! String) + "/ApplicationInventory.plist"
     Log.debug("ApplicationInventory.plist Path: \(inventoryPlist)")
-    
+
     let inventory = readBytesFromFile(filePath: inventoryPlist)
     if inventory != nil {
         let inventoryHash = getHash(inputFile: inventoryPlist)
         Log.debug("inventory hash: \(inventoryHash)")
-        
+
         let get = client.get(requestUrl: "inventory/hash/\(serial)/")
         client.submitRequest(method: "GET", request: get)
         let (res, response) = client.readResponse()
-        
+
         if response.statusCode > 400 {
             Log.debug("Failed to get inventory hash: \(response.statusCode) \(response.allHeaderFields)")
             return
@@ -422,10 +442,10 @@ func sendInventory(serial: String, client: SalClient) {
 func sendCatalogs(client: SalClient) {
     Log.info("Processing catalogs...")
     let managedInstallDir = getAppPref(prefName: "ManagedInstallDir", domain: "ManagedInstalls")
-    let catalogDir = (managedInstallDir! as! String) +  "/catalogs"
-    
-    var checkList = [[String:Any]]()
-    
+    let catalogDir = (managedInstallDir! as! String) + "/catalogs"
+
+    var checkList = [[String: Any]]()
+
     var isDir: ObjCBool = false
     if fileManager.fileExists(atPath: catalogDir, isDirectory: &isDir) {
         do {
@@ -434,8 +454,8 @@ func sendCatalogs(client: SalClient) {
                 let catalogHash = getHash(inputFile: catalog.path)
                 checkList.append(
                     [
-                    "name": catalog.path,
-                    "sha256hash": catalogHash,
+                        "name": catalog.path,
+                        "sha256hash": catalogHash,
                     ]
                 )
             }
@@ -452,57 +472,99 @@ func sendCatalogs(client: SalClient) {
             options: 0
         )
     } catch {
-         Log.debug("could not convert items to plist: \(error)")
+        Log.debug("could not convert items to plist: \(error)")
     }
-    
-    let authKey = (client._auth as! Array<Any>)[1]
+
+    let authKey = (client._auth as! [Any])[1]
     let hashSubmission = [
         "key": authKey,
-        "catalogs": submissionEncode(input: plistData)
+        "catalogs": submissionEncode(input: plistData),
     ]
-    
+
     let post = client.post(requestUrl: "catalog/hash/", jsonData: hashSubmission)
     client.submitRequest(method: "POST", request: post)
     let (content, response) = client.readResponse()
-    
+
     if response.statusCode > 400 {
         Log.debug("failed to get catalog hashes")
     }
-    
+
     var remoteData = [String]()
     do {
         let r = try readPlistFromString(content)
         remoteData = r as! [String]
-           
+
     } catch {
         Log.debug("could not read remote data into string: \(error)")
     }
 
-       
     for catalog in checkList {
         for cat in catalog {
             if !remoteData.contains(cat.key) {
-                let contents = readBytesFromFile(filePath: (catalogDir + "/name"))
+                let contents = readBytesFromFile(filePath: catalogDir + "/name")
                 let catalogSubmission = [
                     "key": authKey,
                     "base64bz2catalog": submissionEncode(input: (contents ?? "".data(using: .utf8))!),
                     "name": catalog["name"]!,
                     "sha256hahs": catalog["sha256hash"]!,
                 ]
-                
+
                 Log.debug("Submitting Catalog: \(catalog["name"]!)")
 
                 let post = client.post(requestUrl: "catalog/submit/", jsonData: catalogSubmission)
-                 client.submitRequest(method: "POST", request: post)
-                 let (_, response) = client.readResponse()
-                 
-                 if response.statusCode > 400 {
-                     Log.debug("Error while submitting Catalog: \(catalog["name"]!)")
-                 }
-                
+                client.submitRequest(method: "POST", request: post)
+                let (_, response) = client.readResponse()
+
+                if response.statusCode > 400 {
+                    Log.debug("Error while submitting Catalog: \(catalog["name"]!)")
+                }
             }
         }
     }
-        
- 
+}
+
+func sendProfiles(client: SalClient) {
+    Log.info("Processing profiles...")
+
+    let profiles = getProfiles() as! [String: Any]
+    // Drop all of the payload info we're not going to actual store.
+    var profileInfo = profiles["_computerlevel"] as? [[String: Any]] ?? []
+    for profile in profileInfo.indices {
+        var pro = profileInfo[profile]
+        var cleansedPayloads = [[String: Any]]()
+        let stored = ["PayloadIdentifier", "PayloadUUID", "PayloadType"]
+
+        for p in pro["ProfileItems"] as? [[String: Any]] ?? [] {
+            for s in stored {
+                cleansedPayloads.append([s: p[s]!])
+            }
+        }
+        pro["ProfileItems"] = cleansedPayloads
+        profileInfo[profile] = pro
+    }
+    Log.debug(dictToJson(dictItem: profiles))
+
+    var plistData = Data()
+    do {
+        plistData = try PropertyListSerialization.data(
+            fromPropertyList: profileInfo,
+            format: PropertyListSerialization.PropertyListFormat.xml,
+            options: 0
+        )
+    } catch {
+        Log.debug("could not convert items to plist: \(error)")
+    }
+
+    let profileSubmission = [
+        "serial": getSerialNumber(),
+        "base64bz2profiles": submissionEncode(input: plistData),
+    ]
+
+    let post = client.post(requestUrl: "profiles/submit/", jsonData: profileSubmission)
+    client.submitRequest(method: "POST", request: post)
+    let (res, response) = client.readResponse()
+
+    if response.statusCode > 400 {
+        Log.debug("Failed to submit profiles: \(res)")
+    }
 }

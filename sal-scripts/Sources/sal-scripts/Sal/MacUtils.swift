@@ -44,7 +44,7 @@ func setupSalClient() -> SalClient {
 
     if (clientCert as! String) != "" {
         if (certKey as! String) != "" {
-            client.cert(certificate: clientCert as! String, key: certKey as! String)
+            client.cert(certificate: clientCert as! String, key: certKey as? String)
         }
         client.cert(certificate: clientCert as! String, key: nil)
     }
