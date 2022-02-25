@@ -24,6 +24,7 @@
 		9D3EB05F27C3FBA700473617 /* Sal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D3EB05E27C3FBA700473617 /* Sal.swift */; };
 		9D3EB0A227C5DA5000473617 /* preflight.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D3EB09E27C5DA1500473617 /* preflight.swift */; };
 		9D3EB0A327C5DA5400473617 /* postflight.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D3EB0A027C5DA2000473617 /* postflight.swift */; };
+		9DFAFDD427C7FA3D004DAB7A /* SWCompression in Frameworks */ = {isa = PBXBuildFile; productRef = 9DFAFDD327C7FA3D004DAB7A /* SWCompression */; };
 		OBJ_100 /* CommandConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_46 /* CommandConfiguration.swift */; };
 		OBJ_101 /* EnumerableFlag.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_47 /* EnumerableFlag.swift */; };
 		OBJ_102 /* ExpressibleByArgument.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_48 /* ExpressibleByArgument.swift */; };
@@ -208,6 +209,7 @@
 			buildActionMask = 0;
 			files = (
 				OBJ_126 /* ArgumentParserToolInfo.framework in Frameworks */,
+				9DFAFDD427C7FA3D004DAB7A /* SWCompression in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -530,6 +532,9 @@
 				OBJ_127 /* PBXTargetDependency */,
 			);
 			name = ArgumentParser;
+			packageProductDependencies = (
+				9DFAFDD327C7FA3D004DAB7A /* SWCompression */,
+			);
 			productName = ArgumentParser;
 			productReference = "swift-argument-parser::ArgumentParser::Product" /* ArgumentParser.framework */;
 			productType = "com.apple.product-type.framework";
@@ -582,6 +587,9 @@
 				en,
 			);
 			mainGroup = OBJ_5;
+			packageReferences = (
+				9DFAFDD227C7FA3D004DAB7A /* XCRemoteSwiftPackageReference "SWCompression" */,
+			);
 			productRefGroup = OBJ_77 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -1187,6 +1195,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		9DFAFDD227C7FA3D004DAB7A /* XCRemoteSwiftPackageReference "SWCompression" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/tsolomko/SWCompression.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		9DFAFDD327C7FA3D004DAB7A /* SWCompression */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9DFAFDD227C7FA3D004DAB7A /* XCRemoteSwiftPackageReference "SWCompression" */;
+			productName = SWCompression;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = OBJ_1 /* Project object */;
 }

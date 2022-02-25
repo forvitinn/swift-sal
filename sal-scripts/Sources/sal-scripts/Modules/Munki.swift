@@ -83,12 +83,24 @@ func MunkiReport() -> [String: Any] {
     if let managedVal = munkiReport["ManagedInstalls"] {
         for i in managedVal as! [[String: Any]] {
             var item = i
+
             var appStatus = "ABSENT"
             var versionKey = "version_to_install"
 
             if item["installed"] as! Int == 1 {
                 appStatus = "PRESENT"
                 versionKey = "installed_version"
+            } else {
+                /*
+                 these are pending installs.
+                 handle specials types.
+                 */
+                for x in item {
+                    if x.value is Date {
+                        let dateFix = getUTCISOTime(date: x.value as! Date)
+                        item[x.key] = dateFix
+                    }
+                }
             }
 
             var selfServe = "False"

@@ -14,8 +14,8 @@ sign:
 	codesign --force --sign ${CODE_SIGN_IDENTITY} --verbose --preserve-metadata= payload/usr/local/munki/report_broken_client
 
 build_pkg: build_report_broken_client
-	mv report_broken_client/build/Release/report_broken_client payload/usr/local/munki/report_broken_client
-	mv sal-scripts/.build/apple/Products/Release/sal-scripts payload/usr/local/sal/bin/${BINARY_NAME}
+	mv "$GITHUB_WORKSPACE"/report_broken_client/build/Release/report_broken_client "$GITHUB_WORKSPACE"/payload/usr/local/munki/report_broken_client
+	mv "$GITHUB_WORKSPACE"/sal-scripts/.build/apple/Products/Release/sal-scripts "$GITHUB_WORKSPACE"/payload/usr/local/sal/bin/${BINARY_NAME}
 
 pkg: 
 	munkipkg .	

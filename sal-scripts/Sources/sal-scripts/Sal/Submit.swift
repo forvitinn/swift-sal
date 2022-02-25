@@ -44,7 +44,7 @@ struct ReadPreferences: ParsableCommand {
     @Option(name: .shortAndLong, help: "Override the machine group key.")
     var key: String = ""
 
-    @Option(name: .shortAndLong, help: "Delay in seconds before running.")
+    @Option(name: .long, help: "Delay in seconds before running.")
     var delay: UInt32 = 0
 
     @Option(name: .shortAndLong, help: "Randomize delay time.")
@@ -83,7 +83,7 @@ func salSubmit() {
         initLogger(logLevel: "DEBUG")
     }
 
-    if args.delay != nil {
+    if args.delay != 0 {
         if args.random {
             let randomInt = Int.random(in: 0 ... Int(args.delay))
             sleep(UInt32(randomInt))
@@ -187,6 +187,7 @@ func salSubmit() {
       and infrequently changing tasks.
      */
     sendInventory(serial: getSerialNumber(), client: client)
+    sendCatalogs(client: client)
 }
 
 func getArgs() {
@@ -242,7 +243,7 @@ func runExternalScripts(runType: String) {
                     if folder.lastPathComponent.starts(with: ".") {
                         continue
                     }
-                    let scripts = try FileManager.default.contentsOfDirectory(at: folder.absoluteURL, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles])
+                    let scripts = try fileManager.contentsOfDirectory(at: folder.absoluteURL, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles])
 
                     for script in scripts {
                         if !fileManager.isExecutableFile(atPath: script.path) {
@@ -387,36 +388,121 @@ func sendInventory(serial: String, client: SalClient) {
     let inventoryPlist = (managedInstallDir! as! String) +  "/ApplicationInventory.plist"
     Log.debug("ApplicationInventory.plist Path: \(inventoryPlist)")
     
-//    do {
-//        let compressedData = try (yourData as NSData).compressed(using: .lzfse)
-//        // use your compressed data
-//    } catch {
-//        print(error.localizedDescription)
-//    }
-    
-    let inventoryHash = getHash(inputFile: inventoryPlist)
-    Log.debug("inventory hash: \(inventoryHash)")
-    let serverHash = ""
-    
-    let get = client.get(requestUrl: "inventory/hash/\(serial)/")
-    client.submitRequest(method: "GET", request: get)
-    let (res, response) = client.readResponse()
-    
-    if response.statusCode > 400 {
-        Log.debug("Failed to get inventory hash: \(response.statusCode) \(response.allHeaderFields)")
-        return
-    }
-    
-    if response.statusCode == 200 {
-        readBytesFromFile(filePath: inventoryPlist)
-        if res != inventoryHash {
-            Log.info("Inventory is out of date; submitting...")
-//            let inventorySubmission = [
-//                "serial": serial,
-//
-//            ]
+    let inventory = readBytesFromFile(filePath: inventoryPlist)
+    if inventory != nil {
+        let inventoryHash = getHash(inputFile: inventoryPlist)
+        Log.debug("inventory hash: \(inventoryHash)")
+        
+        let get = client.get(requestUrl: "inventory/hash/\(serial)/")
+        client.submitRequest(method: "GET", request: get)
+        let (res, response) = client.readResponse()
+        
+        if response.statusCode > 400 {
+            Log.debug("Failed to get inventory hash: \(response.statusCode) \(response.allHeaderFields)")
+            return
+        }
+
+        if response.statusCode == 200 {
+            if res != inventoryHash {
+                Log.info("Inventory is out of date; submitting...")
+
+                let inventorySubmission = [
+                    "serial": serial,
+                    "base64bz2inventory": submissionEncode(input: inventory!),
+                ]
+                let post = client.post(requestUrl: "inventory/submit/", jsonData: inventorySubmission)
+                client.submitRequest(method: "POST", request: post)
+                let (_, response) = client.readResponse()
+                Log.debug("response submitting inventory status code: \(response.statusCode)")
+            }
         }
     }
+}
+
+func sendCatalogs(client: SalClient) {
+    Log.info("Processing catalogs...")
+    let managedInstallDir = getAppPref(prefName: "ManagedInstallDir", domain: "ManagedInstalls")
+    let catalogDir = (managedInstallDir! as! String) +  "/catalogs"
     
+    var checkList = [[String:Any]]()
     
+    var isDir: ObjCBool = false
+    if fileManager.fileExists(atPath: catalogDir, isDirectory: &isDir) {
+        do {
+            let catalogFiles = try fileManager.contentsOfDirectory(at: URL(fileURLWithPath: catalogDir), includingPropertiesForKeys: nil, options: [.skipsHiddenFiles])
+            for catalog in catalogFiles {
+                let catalogHash = getHash(inputFile: catalog.path)
+                checkList.append(
+                    [
+                    "name": catalog.path,
+                    "sha256hash": catalogHash,
+                    ]
+                )
+            }
+        } catch {
+            Log.debug("could not get contents of \(catalogDir): \(error)")
+        }
+    }
+
+    var plistData = Data()
+    do {
+        plistData = try PropertyListSerialization.data(
+            fromPropertyList: checkList,
+            format: PropertyListSerialization.PropertyListFormat.xml,
+            options: 0
+        )
+    } catch {
+         Log.debug("could not convert items to plist: \(error)")
+    }
+    
+    let authKey = (client._auth as! Array<Any>)[1]
+    let hashSubmission = [
+        "key": authKey,
+        "catalogs": submissionEncode(input: plistData)
+    ]
+    
+    let post = client.post(requestUrl: "catalog/hash/", jsonData: hashSubmission)
+    client.submitRequest(method: "POST", request: post)
+    let (content, response) = client.readResponse()
+    
+    if response.statusCode > 400 {
+        Log.debug("failed to get catalog hashes")
+    }
+    
+    var remoteData = [String]()
+    do {
+        let r = try readPlistFromString(content)
+        remoteData = r as! [String]
+           
+    } catch {
+        Log.debug("could not read remote data into string: \(error)")
+    }
+
+       
+    for catalog in checkList {
+        for cat in catalog {
+            if !remoteData.contains(cat.key) {
+                let contents = readBytesFromFile(filePath: (catalogDir + "/name"))
+                let catalogSubmission = [
+                    "key": authKey,
+                    "base64bz2catalog": submissionEncode(input: (contents ?? "".data(using: .utf8))!),
+                    "name": catalog["name"]!,
+                    "sha256hahs": catalog["sha256hash"]!,
+                ]
+                
+                Log.debug("Submitting Catalog: \(catalog["name"]!)")
+
+                let post = client.post(requestUrl: "catalog/submit/", jsonData: catalogSubmission)
+                 client.submitRequest(method: "POST", request: post)
+                 let (_, response) = client.readResponse()
+                 
+                 if response.statusCode > 400 {
+                     Log.debug("Error while submitting Catalog: \(catalog["name"]!)")
+                 }
+                
+            }
+        }
+    }
+        
+ 
 }

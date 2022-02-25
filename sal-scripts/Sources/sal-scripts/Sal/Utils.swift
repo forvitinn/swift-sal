@@ -10,6 +10,7 @@ import CommonCrypto
 import CryptoKit
 import Foundation
 import SystemConfiguration
+import SWCompression
 
 let ResultsPath = "/usr/local/sal/checkin_results.json"
 
@@ -37,7 +38,7 @@ func convertToListOfDictionary(text: String) -> [[String: Any]]? {
         do {
             return try JSONSerialization.jsonObject(with: data, options: []) as? [[String: Any]]
         } catch {
-            print(error.localizedDescription)
+            Log.debug(error.localizedDescription)
         }
     }
     return nil
@@ -48,14 +49,14 @@ func convertToDictionary(text: String) -> [String: Any]? {
         do {
             return try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
         } catch {
-            print(error.localizedDescription)
+            Log.debug(error.localizedDescription)
         }
     }
     return nil
 }
 
 func dictToJson(dictItem: [String: Any]) -> String {
-    let jsonData = try! JSONSerialization.data(withJSONObject: dictItem, options: [])
+    let jsonData = try! JSONSerialization.data(withJSONObject: dictItem, options: [.prettyPrinted])
     let jsonString = String(data: jsonData, encoding: String.Encoding.utf8)!
 
     return jsonString
@@ -231,6 +232,7 @@ func saveResults(data: [String: Any]) {
     } catch {
         Log.error("could not update \(ResultsPath): \(error)")
     }
+    
     writeJson(dataObject: data, filepath: ResultsPath)
 }
 
@@ -241,27 +243,23 @@ func setCheckinResults(moduleName: String, data: Any) {
     saveResults(data: results)
 }
 
-func submissionEncode(input: String) -> String {
-    /*
-      meed to check on compression server side.
-      this currently only base64 encodes the item but im not sure
-      if the server is expecting _only_ a bx2 compressed objcct.
-     */
-    return Data(input.utf8).base64EncodedString()
+func submissionEncode(input: Data) -> String {
+    // compress the data and base64 encode it
+    let compressedData = BZip2.compress(data: input)
+
+    return compressedData.base64EncodedString()
 }
 
 func readBytesFromFile(filePath: String) -> Data? {
     if fileManager.fileExists(atPath: filePath) {
-        if let data = NSData(contentsOfFile: filePath) {
-            var readBuffer = Array<UInt8>(count:sizeof(Int32), repeatedValue: 0)
-            data.getBytes(UnsafeMutableRawPointer(), range: 0)
-//                var buffer = [UInt8]?(count: data.length, repeatedValue: 0)
-//                var buffer = Array<UInt8>(count: 1024, repeatedValue: 0)
-//                data.getBytes(&buffer, length: data.length)
-//                bytes = buffer
+        do {
+            let contents = try String(contentsOf: URL(fileURLWithPath: filePath), encoding: .utf8)
+            return contents.data(using: .utf8)
+        } catch {
+            Log.debug("could not read \(filePath): \(error)")
+            return nil
         }
-
+    } else {
+        return nil
     }
-
-
 }
