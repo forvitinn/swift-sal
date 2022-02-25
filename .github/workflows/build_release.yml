@@ -30,7 +30,7 @@ jobs:
         cd ../
         mv report_broken_client/build/Release/report_broken_client payload/usr/local/munki/report_broken_client
         mkdir -p payload/usr/local/sal/bin/
-        mv -v sal-scripts/.build/apple/Products/sal-scripts payload/usr/local/sal/bin/sal-submit
+        mv -v sal-scripts/.build/apple/Products/Release/sal-scripts payload/usr/local/sal/bin/sal-submit
         munkipkg .
 
     - name: get environment variables
