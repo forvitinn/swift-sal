@@ -1,0 +1,28 @@
+#!/usr/local/munki/munki-python
+
+import sys
+import os
+import subprocess
+
+POSTFLIGHT_DIR = '/usr/local/munki/postflight.d'
+
+
+def iter_postflight_scripts(postflight_dir):
+    for script in os.listdir(postflight_dir):
+        script_path = os.path.join(postflight_dir, script)
+        if not os.access(script_path, os.X_OK):
+            print(f"'{script_path}' is not executable or has bad permissions")
+        else:
+            yield script_path
+
+
+def execute_postflight_scripts(postflight_dir):
+    for script_path in iter_postflight_scripts(postflight_dir):
+        try:
+            subprocess.call([script_path, sys.argv[1]])
+        except OSError:
+            print(f"Could not execute script '{script_path}'!")
+
+
+if __name__ == '__main__':
+    execute_postflight_scripts(POSTFLIGHT_DIR)

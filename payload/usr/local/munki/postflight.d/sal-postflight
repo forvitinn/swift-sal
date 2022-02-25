@@ -1,0 +1,5 @@
+#!/bin/sh
+
+/usr/local/sal/bin/sal-submit --scripts --post --debug
+
+exit 0

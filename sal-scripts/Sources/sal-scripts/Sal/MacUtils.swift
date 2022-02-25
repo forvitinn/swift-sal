@@ -9,16 +9,16 @@ import Foundation
 
 let salPrefDomain = "com.github.salopensource.sal"
 
-func setupSalClient() {
-    let client = SalClient.init()
-    
+func setupSalClient() -> SalClient {
+    let client = SalClient()
+
     let caCert = salPref("CACert")
     let clientCert = salPref("SSLClientCertificate")
     let certKey = salPref("SSLClientKey")
-    
+
     let certArray = [caCert, clientCert, certKey]
-    
-    if let _ = certArray.first(where: {fileManager.fileExists(atPath: $0 as! String)}) {
+
+    if let _ = certArray.first(where: { fileManager.fileExists(atPath: $0 as! String) }) {
         if !certArray.allSatisfy({ fileManager.fileExists(atPath: $0 as! String) }) {
             Log.warning("""
                         Argument warning! If using the `CACert`, `SSLClientCertificate`, or ",
@@ -29,33 +29,35 @@ func setupSalClient() {
         Log.debug("Using SalClient")
     } else {
         /*
-         Assume that any passed certs are by CN since they don't
-        exist as files anywhere.
-        
-         If we're going to use the keychain, we need to use a
-        macsesh
-        */
+          Assume that any passed certs are by CN since they don't
+         exist as files anywhere.
+
+          If we're going to use the keychain, we need to use a
+         macsesh
+         */
         Log.debug("Using MacKeychainClient")
     }
-    
+
     if (caCert as! String) != "" {
-        client.verify(path: (caCert as! String))
+        client.verify(path: caCert as! String)
     }
 
     if (clientCert as! String) != "" {
         if (certKey as! String) != "" {
-            client.cert(certificate: (clientCert as! String), key: (certKey as! String))
+            client.cert(certificate: clientCert as! String, key: certKey as? String)
         }
-        client.cert(certificate: (clientCert as! String), key: nil)
+        client.cert(certificate: clientCert as! String, key: nil)
     }
-    
+
     let basicAuth = salPref("BasicAuth")
     if (basicAuth as! String) != "" {
         let key = salPref("key")
-        client.auth(creds: ["sal", (key as! String)])
+        client.auth(creds: ["sal", key as! String])
     }
-    
-    client.baseUrl(url: (salPref("ServerURL") as! String))
+
+    client.baseUrl(url: salPref("ServerURL") as! String)
+
+    return client
 }
 
 func salPref(_ prefName: String) -> Any {
@@ -69,36 +71,36 @@ func salPref(_ prefName: String) -> Any {
         "GetOhai": false,
         "LastRunWasOffline": false,
         "SendOfflineReport": false,
-    ] as [String : Any]
-    
-    
+    ] as [String: Any]
+
     var prefVal = pref(prefName, salPrefDomain) ?? "None"
     // bool and nsarray conversion didnt work well in the switch. handle it here.
     if let stringBool = prefVal as? Bool {
+        // handle bool conversion here
         prefVal = String(stringBool)
     }
-    
+
     if let stringArray = prefVal as? NSArray {
-        prefVal = stringArray.description.filter { !$0.isWhitespace }
+        return stringArray
     }
-    
+
     if (prefVal as! String) == "None" {
         if let prefExists = defaultPrefs[prefVal as! String] {
             // If we got here, the pref value was either set to None or never
             // set, AND the default was also None. Fall back to auto prefs.
             prefVal = unobjctify(prefExists)!
             /*
-            Sets a Sal preference.
-            The preference file on disk is located at
-            /Library/Preferences/com.github.salopensource.sal.plist.  This should
-            normally be used only for 'bookkeeping' values; values that control
-            the behavior of munki may be overridden elsewhere (by MCX, for
-            example)
-            */
+             Sets a Sal preference.
+             The preference file on disk is located at
+             /Library/Preferences/com.github.salopensource.sal.plist.  This should
+             normally be used only for 'bookkeeping' values; values that control
+             the behavior of munki may be overridden elsewhere (by MCX, for
+             example)
+             */
             setPref(prefName, prefVal as Any)
         }
     }
-    
+
     return unobjctify(prefVal)!
 }
 
@@ -106,7 +108,7 @@ func forced(pref: String, _ bundleID: String = salPrefDomain) -> Bool {
     return CFPreferencesAppValueIsForced(pref as CFString, bundleID as CFString)
 }
 
-func prefsReport() -> [String:Any] {
+func prefsReport() -> [String: Any] {
     let prefs = [
         "ServerURL",
         "key",
@@ -119,7 +121,7 @@ func prefsReport() -> [String:Any] {
         "SSLClientKey",
         "MessageBlacklistPatterns",
     ]
-    var report = [String:Any]()
+    var report = [String: Any]()
     for item in prefs {
         let value = salPref(item)
         let force = forced(pref: item)
@@ -137,27 +139,21 @@ func unobjctify(_ item: Any) -> Any? {
      */
     switch item {
     case is String:
-        Log.debug("\(String(describing: item)) is a String")
         return item
     case is Int:
-        Log.debug("\(String(describing: item)) is an Int")
         return item
     case is Double:
-        Log.debug("\(String(describing: item)) is a Double")
         return item
     case is NSDate:
-        Log.debug("\(String(describing: item)) is NSDate. Trying to convert.")
         return (item as! String)
-    case is Dictionary<String, Any>:
-        Log.debug("\(String(describing: item)) is a Dictionary")
-        for key in (item as! [String:Any]).keys {
+    case is [String: Any]:
+        for key in (item as! [String: Any]).keys {
             return unobjctify(key)
         }
-        for value in (item as! [String:Any]).values {
+        for value in (item as! [String: Any]).values {
             return unobjctify(value)
         }
     default:
-        Log.debug("\(String(describing: item)) is unchecked type")
         return item
     }
     return item
@@ -172,7 +168,7 @@ func scriptIsRunning(scriptName: String) -> Bool {
     let lines = output.components(separatedBy: "\n")
     for line in lines {
         let part = line.components(separatedBy: " ")
-        if (part[0].contains("/MacOS/Python") || part[0].contains("python")) {
+        if part[0].contains("/MacOS/Python") || part[0].contains("python") {
             if part.count > 1 {
                 if part[1].contains(scriptName) {
                     return true
@@ -183,18 +179,18 @@ func scriptIsRunning(scriptName: String) -> Bool {
     return false
 }
 
-func runScripts(directory: String,scriptArgs: [String], _ error: Bool = false) -> [String] {
+func runScripts(directory: String, scriptArgs: [String], _ error: Bool = false) -> [String] {
     var results = [String]()
     var scripts = [Any]()
     let skipNames = ["__pycache__"]
-    
+
     let files = fileManager.enumerator(atPath: directory)
     while let file = files?.nextObject() {
         if !skipNames.contains(file as! String) {
             scripts.append(file)
         }
     }
-    
+
     for script in scripts {
         if !fileManager.isExecutableFile(atPath: script as! String) {
             results.append("\(script) is not executable or has bad permissions")
@@ -202,7 +198,7 @@ func runScripts(directory: String,scriptArgs: [String], _ error: Bool = false) -
         }
 
         let (err, _) = exec(command: script as! String, arguments: scriptArgs)
-        
+
         if err != "" {
             let errorMessage = "error running \(script): \(err)"
             if !error {
@@ -211,19 +207,19 @@ func runScripts(directory: String,scriptArgs: [String], _ error: Bool = false) -
                 Log.error(errorMessage)
             }
         }
-        
+
         results.append("\(script) ran successfully")
     }
-    
+
     return results
 }
 
-
-func waitForScript(scriptName: String, repeatCount:Int = 3, pause:UInt32 = 1) -> Bool {
+func waitForScript(scriptName: String, repeatCount: Int = 3, pause: UInt32 = 1) -> Bool {
     var count = 0
     while count < repeatCount {
         if scriptIsRunning(scriptName: scriptName) {
             sleep(pause)
+            print(count)
             count += 1
         } else {
             return false

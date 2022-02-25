@@ -77,14 +77,14 @@ func getProfiles() -> NSDictionary? {
 
     task.waitUntilExit()
 
-    if !FileManager.default.fileExists(atPath: profileOut) {
+    if !fileManager.fileExists(atPath: profileOut) {
         Log.debug("Could not read profiles output")
         return [:]
     }
 
     let profileReport = NSDictionary(contentsOfFile: profileOut)
     do {
-        try FileManager.default.removeItem(atPath: profileOut)
+        try fileManager.removeItem(atPath: profileOut)
     } catch {
         Log.debug("Error removing temporary profile directory")
     }

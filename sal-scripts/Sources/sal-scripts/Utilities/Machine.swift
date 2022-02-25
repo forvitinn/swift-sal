@@ -9,6 +9,7 @@ import Foundation
 import SystemConfiguration
 
 // MARK: borrowed from https://github.com/macadmins/nudge
+
 extension FixedWidthInteger {
     // https://stackoverflow.com/a/63539782
     var byteWidth: Int {
@@ -43,11 +44,11 @@ func getCPUTypeString() -> String {
 
     let cpu_arch = type & 0xFF // mask for architecture bits
     if cpu_arch == cpu_type_t(7) {
-        //Log.debug("CPU Type is Intel")
+        // Log.debug("CPU Type is Intel")
         return "Intel"
     }
     if cpu_arch == cpu_type_t(12) {
-        //Log.debug("CPU Type is Apple Silicon")
+        // Log.debug("CPU Type is Apple Silicon")
         return "Apple Silicon"
     }
     Log.error("Unknown CPU Type")
@@ -102,12 +103,13 @@ func getSystemConsoleUsername() -> String {
 }
 
 // MARK: General Machine details
+
 func getFriendlyModel() -> String {
     let (err, res) = exec(command: "/usr/sbin/ioreg", arguments: ["-arc", "IOPlatformDevice", "-k", "product-name"])
 
     if res == "" {
         var results = [String: Any]()
-        //Log.info("Using ioreg didnt work. Trying one more time.")
+        // Log.info("Using ioreg didnt work. Trying one more time.")
         let path = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0].appendingPathComponent("Preferences/com.apple.SystemProfiler.plist")
 
         if FileManager.default.fileExists(atPath: path.path) {

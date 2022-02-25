@@ -21,6 +21,10 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		9D3EB05F27C3FBA700473617 /* Sal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D3EB05E27C3FBA700473617 /* Sal.swift */; };
+		9D3EB0A227C5DA5000473617 /* preflight.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D3EB09E27C5DA1500473617 /* preflight.swift */; };
+		9D3EB0A327C5DA5400473617 /* postflight.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D3EB0A027C5DA2000473617 /* postflight.swift */; };
+		9DFAFDD427C7FA3D004DAB7A /* SWCompression in Frameworks */ = {isa = PBXBuildFile; productRef = 9DFAFDD327C7FA3D004DAB7A /* SWCompression */; };
 		OBJ_100 /* CommandConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_46 /* CommandConfiguration.swift */; };
 		OBJ_101 /* EnumerableFlag.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_47 /* EnumerableFlag.swift */; };
 		OBJ_102 /* ExpressibleByArgument.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_48 /* ExpressibleByArgument.swift */; };
@@ -135,6 +139,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		9D3EB05E27C3FBA700473617 /* Sal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sal.swift; sourceTree = "<group>"; };
+		9D3EB09E27C5DA1500473617 /* preflight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = preflight.swift; sourceTree = "<group>"; };
+		9D3EB0A027C5DA2000473617 /* postflight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = postflight.swift; sourceTree = "<group>"; };
 		OBJ_10 /* AppleUpdates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleUpdates.swift; sourceTree = "<group>"; };
 		OBJ_11 /* MachineInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MachineInfo.swift; sourceTree = "<group>"; };
 		OBJ_12 /* Munki.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Munki.swift; sourceTree = "<group>"; };
@@ -191,7 +198,7 @@
 		OBJ_76 /* Package.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = Package.swift; path = "/Users/john.peterson/Documents/Personal/Github/swift-sal/sal-scripts/.build/checkouts/swift-argument-parser/Package.swift"; sourceTree = "<group>"; };
 		OBJ_82 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		"sal-scripts::sal-scripts::Product" /* sal-scripts */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; path = "sal-scripts"; sourceTree = BUILT_PRODUCTS_DIR; };
-		"sal-scripts::sal-scriptsTests::Product" /* sal_scriptsTests.xctest */ = {isa = PBXFileReference; lastKnownFileType = file; name = sal_scriptsTests.xctest; path = "sal-scriptsTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		"sal-scripts::sal-scriptsTests::Product" /* sal-scriptsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = "sal-scriptsTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		"swift-argument-parser::ArgumentParser::Product" /* ArgumentParser.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = ArgumentParser.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		"swift-argument-parser::ArgumentParserToolInfo::Product" /* ArgumentParserToolInfo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = ArgumentParserToolInfo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -202,6 +209,7 @@
 			buildActionMask = 0;
 			files = (
 				OBJ_126 /* ArgumentParserToolInfo.framework in Frameworks */,
+				9DFAFDD427C7FA3D004DAB7A /* SWCompression in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -233,6 +241,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		9D3EB09D27C5D9E900473617 /* Munki */ = {
+			isa = PBXGroup;
+			children = (
+				9D3EB09E27C5DA1500473617 /* preflight.swift */,
+				9D3EB0A027C5DA2000473617 /* postflight.swift */,
+			);
+			path = Munki;
+			sourceTree = "<group>";
+		};
 		OBJ_14 /* Sal */ = {
 			isa = PBXGroup;
 			children = (
@@ -418,7 +435,7 @@
 				"swift-argument-parser::ArgumentParser::Product" /* ArgumentParser.framework */,
 				"swift-argument-parser::ArgumentParserToolInfo::Product" /* ArgumentParserToolInfo.framework */,
 				"sal-scripts::sal-scripts::Product" /* sal-scripts */,
-				"sal-scripts::sal-scriptsTests::Product" /* sal_scriptsTests.xctest */,
+				"sal-scripts::sal-scriptsTests::Product" /* sal-scriptsTests.xctest */,
 			);
 			name = Products;
 			sourceTree = BUILT_PRODUCTS_DIR;
@@ -426,6 +443,7 @@
 		OBJ_8 /* sal-scripts */ = {
 			isa = PBXGroup;
 			children = (
+				9D3EB09D27C5D9E900473617 /* Munki */,
 				OBJ_9 /* Modules */,
 				OBJ_14 /* Sal */,
 				OBJ_20 /* Utilities */,
@@ -442,6 +460,7 @@
 				OBJ_11 /* MachineInfo.swift */,
 				OBJ_12 /* Munki.swift */,
 				OBJ_13 /* Profiles.swift */,
+				9D3EB05E27C3FBA700473617 /* Sal.swift */,
 			);
 			path = Modules;
 			sourceTree = "<group>";
@@ -497,7 +516,7 @@
 			);
 			name = "sal-scriptsTests";
 			productName = sal_scriptsTests;
-			productReference = "sal-scripts::sal-scriptsTests::Product" /* sal_scriptsTests.xctest */;
+			productReference = "sal-scripts::sal-scriptsTests::Product" /* sal-scriptsTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		"swift-argument-parser::ArgumentParser" /* ArgumentParser */ = {
@@ -513,6 +532,9 @@
 				OBJ_127 /* PBXTargetDependency */,
 			);
 			name = ArgumentParser;
+			packageProductDependencies = (
+				9DFAFDD327C7FA3D004DAB7A /* SWCompression */,
+			);
 			productName = ArgumentParser;
 			productReference = "swift-argument-parser::ArgumentParser::Product" /* ArgumentParser.framework */;
 			productType = "com.apple.product-type.framework";
@@ -553,6 +575,7 @@
 		OBJ_1 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				BuildIndependentTargetsInParallel = YES;
 				LastSwiftMigration = 9999;
 				LastUpgradeCheck = 9999;
 			};
@@ -564,6 +587,9 @@
 				en,
 			);
 			mainGroup = OBJ_5;
+			packageReferences = (
+				9DFAFDD227C7FA3D004DAB7A /* XCRemoteSwiftPackageReference "SWCompression" */,
+			);
 			productRefGroup = OBJ_77 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -594,6 +620,7 @@
 			files = (
 				OBJ_140 /* AppleUpdates.swift in Sources */,
 				OBJ_141 /* MachineInfo.swift in Sources */,
+				9D3EB0A227C5DA5000473617 /* preflight.swift in Sources */,
 				OBJ_142 /* Munki.swift in Sources */,
 				OBJ_143 /* Profiles.swift in Sources */,
 				OBJ_144 /* Checkin.swift in Sources */,
@@ -604,7 +631,9 @@
 				OBJ_149 /* Logger.swift in Sources */,
 				OBJ_150 /* Machine.swift in Sources */,
 				OBJ_151 /* Prefs.swift in Sources */,
+				9D3EB05F27C3FBA700473617 /* Sal.swift in Sources */,
 				OBJ_152 /* main.swift in Sources */,
+				9D3EB0A327C5DA5400473617 /* postflight.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -804,6 +833,7 @@
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
 				OTHER_SWIFT_FLAGS = "$(inherited)";
+				PRODUCT_NAME = "sal-scripts";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited)";
 				SWIFT_FORCE_DYNAMIC_LINK_STDLIB = YES;
 				SWIFT_FORCE_STATIC_LINK_STDLIB = NO;
@@ -835,6 +865,7 @@
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
 				OTHER_SWIFT_FLAGS = "$(inherited)";
+				PRODUCT_NAME = "munki-scripts";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited)";
 				SWIFT_FORCE_DYNAMIC_LINK_STDLIB = YES;
 				SWIFT_FORCE_STATIC_LINK_STDLIB = NO;
@@ -850,6 +881,7 @@
 			buildSettings = {
 				LD = /usr/bin/true;
 				OTHER_SWIFT_FLAGS = "-swift-version 5 -I $(TOOLCHAIN_DIR)/usr/lib/swift/pm/ManifestAPI -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk -package-description-version 5.5.0";
+				PRODUCT_NAME = "sal-scriptsPackageDescription";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
@@ -859,6 +891,7 @@
 			buildSettings = {
 				LD = /usr/bin/true;
 				OTHER_SWIFT_FLAGS = "-swift-version 5 -I $(TOOLCHAIN_DIR)/usr/lib/swift/pm/ManifestAPI -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk -package-description-version 5.5.0";
+				PRODUCT_NAME = "sal-scriptsPackageDescription";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
@@ -866,12 +899,14 @@
 		OBJ_166 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				PRODUCT_NAME = "sal-scriptsPackageTests";
 			};
 			name = Debug;
 		};
 		OBJ_167 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				PRODUCT_NAME = "sal-scriptsPackageTests";
 			};
 			name = Release;
 		};
@@ -898,6 +933,7 @@
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
 				OTHER_SWIFT_FLAGS = "$(inherited)";
+				PRODUCT_NAME = "sal-scriptsTests";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited)";
 				SWIFT_VERSION = 5.0;
 				TARGET_NAME = "sal-scriptsTests";
@@ -929,6 +965,7 @@
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
 				OTHER_SWIFT_FLAGS = "$(inherited)";
+				PRODUCT_NAME = "munki-scriptsTests";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited)";
 				SWIFT_VERSION = 5.0;
 				TARGET_NAME = "sal-scriptsTests";
@@ -1158,6 +1195,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		9DFAFDD227C7FA3D004DAB7A /* XCRemoteSwiftPackageReference "SWCompression" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/tsolomko/SWCompression.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		9DFAFDD327C7FA3D004DAB7A /* SWCompression */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9DFAFDD227C7FA3D004DAB7A /* XCRemoteSwiftPackageReference "SWCompression" */;
+			productName = SWCompression;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = OBJ_1 /* Project object */;
 }

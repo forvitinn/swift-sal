@@ -1,0 +1,46 @@
+name: Build universal pkg
+on:
+  push:
+    branches:
+    - main
+    paths-ignore:
+    - '**/README.md'
+
+jobs:
+  build:
+    runs-on: macos-11
+
+    steps:
+    - name: checkout this repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: install munkipkg
+      run: | 
+        munki_pkg_dir=$(mktemp -d -t 'munki_pkg_dir')
+        curl -L https://raw.githubusercontent.com/munki/munki-pkg/main/munkipkg --output munkipkg
+        chmod +x munkipkg
+        export PATH="$PATH:$pwd"
+        
+    - name: build pkg
+      run: |
+        cd sal-scripts; swift build -c release --arch arm64 --arch x86_64
+        xcodebuild -project "${GITHUB_WORKSPACE}"/report_broken_client/report_broken_client.xcodeproj -configuration Release
+        cd ../
+        mv report_broken_client/build/Release/report_broken_client payload/usr/local/munki/report_broken_client
+        mkdir -p payload/usr/local/sal/bin/
+        mv -v sal-scripts/.build/apple/Products/Release/sal-scripts payload/usr/local/sal/bin/sal-submit
+        chmod +X munkipkg
+        ./munkipkg .
+
+    - name: get environment variables
+      id: get_env_var
+      run: |
+          echo "PKG_VERSION=$(cat build-info.json| jq -r .version)" >> $GITHUB_ENV
+
+    - name: release the kraken
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{env.PKG_VERSION}}
+        files: build/sal-scripts-${{env.PKG_VERSION}}.pkg

@@ -1,0 +1,11 @@
+{
+    "postinstall_action": "none",
+    "suppress_bundle_relocation": true,
+    "name": "sal-scripts-${version}.pkg",
+    "distribution_style": false,
+    "preserve_xattr": false,
+    "install_location": "/",
+    "version": "0.0.1",
+    "ownership": "recommended",
+    "identifier": "com.github.sal-swift.pkg"
+}

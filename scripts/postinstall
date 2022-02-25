@@ -1,0 +1,15 @@
+#!/bin/sh
+
+if [ "$3" == "/" ]; then
+    /bin/launchctl unload /Library/LaunchDaemons/com.salopensource.sal.runner.plist
+    /bin/launchctl load /Library/LaunchDaemons/com.salopensource.sal.runner.plist
+
+    /bin/launchctl unload /Library/LaunchDaemons/com.salopensource.sal.random.runner.plist
+    /bin/launchctl load /Library/LaunchDaemons/com.salopensource.sal.random.runner.plist
+
+    /usr/bin/find "/usr/local/sal" -name '*.pyc' -delete
+else
+    /usr/bin/find "$3/usr/local/sal" -name '*.pyc' -delete
+fi
+
+exit 0

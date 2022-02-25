@@ -10,6 +10,7 @@ import Foundation
 let fileManager = FileManager.default
 
 // MARK: borrowed from https://github.com/munki/munki/blob/main/code/apps/Managed%20Software%20Center/Managed%20Software%20Center/FoundationPlist.swift
+
 enum FoundationPlistError: Error {
     case readError(description: String)
     case writeError(description: String)
@@ -64,8 +65,13 @@ func reloadPrefs(bundleID: String) {
 
 func su_pref(_ prefName: String) -> Any? {
     // Return a com.apple.SoftwareUpdate preference.
+    return getAppPref(prefName: prefName, domain: "com.apple.SoftwareUpdate")
+}
+
+func getAppPref(prefName: String, domain: String) -> Any? {
+    // Return a com.apple.SoftwareUpdate preference.
     return CFPreferencesCopyValue(prefName as CFString,
-                                  "com.apple.SoftwareUpdate" as CFString,
+                                  domain as CFString,
                                   kCFPreferencesAnyUser,
                                   kCFPreferencesCurrentHost)
 }
@@ -75,7 +81,8 @@ func serialize(_ plist: Any) throws -> Data {
         let plistData = try PropertyListSerialization.data(
             fromPropertyList: plist,
             format: PropertyListSerialization.PropertyListFormat.xml,
-            options: 0)
+            options: 0
+        )
         return plistData
     } catch {
         throw FoundationPlistError.writeError(description: "\(error)")
@@ -92,7 +99,19 @@ func writePlist(_ dataObject: Any, toFile filepath: String) throws {
         throw FoundationPlistError.writeError(description: "\(error)")
     }
 }
+
+func writeJson(dataObject: [String: Any], filepath: String) {
+    let data = dictToJson(dictItem: dataObject)
+    let url = URL(fileURLWithPath: filepath)
+    do {
+        try data.write(to: url, atomically: true, encoding: .utf8)
+    } catch {
+        Log.debug("could not write to \(filepath): \(error)")
+    }
+}
+
 // MARK: end of munki help
+
 func getPref(plistPath: String, plistKey: String) -> String {
     if fileManager.fileExists(atPath: plistPath) {
         let resultDictionary = NSDictionary(contentsOfFile: plistPath)
@@ -105,7 +124,7 @@ func getPref(plistPath: String, plistKey: String) -> String {
     }
 }
 
-func setPref(_ prefName: String,  _ prefValue: Any) {
-     CFPreferencesSetValue(prefName as CFString, prefValue as! CFString, salPrefDomain as CFString, kCFPreferencesAnyUser, kCFPreferencesCurrentHost)
+func setPref(_ prefName: String, _ prefValue: Any) {
+    CFPreferencesSetValue(prefName as CFString, prefValue as! CFString, salPrefDomain as CFString, kCFPreferencesAnyUser, kCFPreferencesCurrentHost)
     reloadPrefs(bundleID: salPrefDomain)
 }

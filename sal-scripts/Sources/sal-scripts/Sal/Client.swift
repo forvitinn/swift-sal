@@ -7,82 +7,107 @@
 
 import Foundation
 
-
 class SalClient {
-    var _base_url:String = ""
-    var _auth: (Any)? = nil
-    var _cert: (Any)? = nil
-    var _verify: (Any)? = nil
+    var _base_url: String = ""
+    var _auth: Any?
+    var _cert: Any?
+    var _verify: Any?
+
+    var httpResponse = HTTPURLResponse()
+    var responseString: String = ""
+    var sesh = URLSessionConfiguration.default
+
     let basic_timeout = [3.05, 4]
     let post_timeout = [3.05, 8]
-        
+
     func createSession() {
-        if (self._auth != nil) {
-            print(0)
+        if _auth != nil {
+            let authData = ((_auth as! Array)[0] + ":" + (_auth as! Array)[1]).data(using: .utf8)!.base64EncodedString()
+            sesh.httpAdditionalHeaders = [
+                "Content-Type": "application/json; charset=utf-8",
+                "Accept": "application/json; charset=utf-8",
+                "Authorization": "Basic \(authData)",
+            ]
         }
-        if (self._cert != nil) {
-            print(1)
+        if _cert != nil {
+            Log.debug("build me")
         }
-        if (self._verify != nil) {
-            print(2)
+        if _verify != nil {
+            Log.debug("build me")
         }
     }
-    
+
     func auth(creds: [String]) {
-        self._auth = creds
-        self.createSession()
+        _auth = creds
+        createSession()
     }
-    
+
     func baseUrl(url: String) {
         if url.hasSuffix("/") {
-            self._base_url = String(url.dropLast())
+            _base_url = String(url.dropLast())
         } else {
-            self._base_url = url
+            _base_url = url
         }
     }
-    
+
     func cert(certificate: String, key: String?) {
         if key != nil {
-            self._cert = [certificate, key]
+            _cert = [certificate, key]
         } else {
-            self._cert = certificate
+            _cert = certificate
         }
-        self.createSession()
+        createSession()
     }
-    
+
+    func readResponse() -> (responseString: String, httpResponse: HTTPURLResponse) {
+        let resStr = responseString
+        let httpRes = httpResponse
+        responseString = ""
+        httpResponse = HTTPURLResponse()
+
+        return (resStr, httpRes)
+    }
+
     func verify(path: String) {
-        self._verify = path
-        self.createSession()
+        _verify = path
+        createSession()
     }
-    
+
     func buildUrl(url: String) -> String {
-        var endPoint: String = ""
+        var endPoint = ""
         if url.hasPrefix("/") {
             endPoint = String(url.dropFirst())
         }
         if url.hasSuffix("/") {
             endPoint = String(url.dropLast())
         }
-    
-        return self._base_url + "/" + endPoint + "/"
+
+        return _base_url + "/" + endPoint + "/"
     }
-    
-    func get(requestUrl: String) {
+
+    func get(requestUrl: String) -> URLRequest {
         let url = URL(string: buildUrl(url: requestUrl))
         var request = URLRequest(url: url!)
         request.httpMethod = "GET"
 
+        return request
     }
-    
-    func post(requestUrl: String) {
+
+    func post(requestUrl: String, jsonData: [String: Any]) -> URLRequest {
         let url = URL(string: buildUrl(url: requestUrl))
         var request = URLRequest(url: url!)
         request.httpMethod = "POST"
+        let json = try? JSONSerialization.data(withJSONObject: jsonData.compactMapValues { $0 })
 
+        request.httpBody = json
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+
+        return request
     }
-        
+
     func httpRequest(request: URLRequest, session: URLSessionConfiguration, completion: @escaping () -> Void) {
-        let task = URLSession(configuration: session).dataTask(with: request) { data, _, error in
+        let task = URLSession(configuration: session).dataTask(with: request) { data, response, error in
             defer {
                 DispatchQueue.main.async {
                     completion()
@@ -92,30 +117,31 @@ class SalClient {
             guard
                 error == nil,
                 let data = data,
-                let response = String(data: data, encoding: .utf8)
+                let res = String(data: data, encoding: .utf8),
+                let response = response as? HTTPURLResponse
             else {
                 Log.error("error submitting results: \(String(describing: error))")
                 return
             }
-            Log.info("submission response: \(response)")
+            self.httpResponse = response
+            self.responseString = res
         }
         task.resume()
     }
-    
+
     func submitRequest(method: String, request: URLRequest) {
-        let sessionConfig = URLSessionConfiguration.default
         if method == "GET" {
-            sessionConfig.timeoutIntervalForRequest = basic_timeout[0]
-            sessionConfig.timeoutIntervalForResource = basic_timeout[1]
+            sesh.timeoutIntervalForRequest = basic_timeout[0]
+            sesh.timeoutIntervalForResource = basic_timeout[1]
         }
         if method == "POST" {
-            sessionConfig.timeoutIntervalForRequest = post_timeout[0]
-            sessionConfig.timeoutIntervalForResource = post_timeout[1]
+            sesh.timeoutIntervalForRequest = post_timeout[0]
+            sesh.timeoutIntervalForResource = post_timeout[1]
         }
-        
+
         var finished = false
 
-        httpRequest(request: request, session: sessionConfig) {
+        httpRequest(request: request, session: sesh) {
             finished = true
         }
 
@@ -124,4 +150,3 @@ class SalClient {
         }
     }
 }
-
