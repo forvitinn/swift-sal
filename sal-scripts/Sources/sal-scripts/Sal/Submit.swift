@@ -32,10 +32,10 @@ extension URL {
 }
 
 struct ReadPreferences: ParsableCommand {
-    @Option(name: .shortAndLong, help: "Enable full debug output.")
+    @Flag(help: "Enable full debug output.")
     var debug: Bool = false
 
-    @Option(name: .shortAndLong, help: "Enable verbose output.")
+    @Flag(help: "Enable verbose output.")
     var verbose: Bool = false
 
     @Option(name: .shortAndLong, help: "Override the server URL for testing.")
@@ -146,8 +146,8 @@ func salSubmit() {
     let scriptResults = gatherInfo()
     saveResults(data: scriptResults)
 
-    for message in scriptResults.keys {
-        Log.debug(message)
+    for message in scriptResults {
+        Log.debug(String(describing: message))
     }
     var report = getCheckinResults()
 
@@ -186,9 +186,22 @@ func salSubmit() {
       Speed up manual runs by skipping these potentially slow-running,
       and infrequently changing tasks.
      */
-    sendInventory(serial: getSerialNumber(), client: client)
-    sendCatalogs(client: client)
-    sendProfiles(client: client)
+    if runType != "manual" {
+        sendInventory(serial: getSerialNumber(), client: client)
+        sendCatalogs(client: client)
+        sendProfiles(client: client)
+    }
+
+    let watchFile = "/Users/Shared/.com.salopensource.sal.run"
+    if fileManager.fileExists(atPath: watchFile) {
+        do {
+            try fileManager.removeItem(atPath: watchFile)
+        } catch {
+            Log.debug("could not remove \(watchFile)")
+        }
+    }
+
+    Log.info("Checkin complete.")
 }
 
 func getArgs() {
@@ -562,9 +575,9 @@ func sendProfiles(client: SalClient) {
 
     let post = client.post(requestUrl: "profiles/submit/", jsonData: profileSubmission)
     client.submitRequest(method: "POST", request: post)
-    let (res, response) = client.readResponse()
+    let (_, response) = client.readResponse()
 
     if response.statusCode > 400 {
-        Log.debug("Failed to submit profiles: \(res)")
+        Log.debug("Failed to submit profiles")
     }
 }
